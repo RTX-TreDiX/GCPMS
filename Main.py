@@ -1,4 +1,5 @@
 import sys
+import os
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
@@ -15,13 +16,15 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QGraphicsOpacityEffect,
     QButtonGroup,
+    QStackedWidget,
+    QMessageBox
 )
-from PySide6.QtGui import QColor, QPainter, QPen, QIcon, QMovie, QPixmap
-from PySide6.QtCore import Qt, QPropertyAnimation, Signal, QSize , QDateTime
-from PySide6.QtCharts import QChart, QChartView, QLineSeries ,QValueAxis ,QDateTimeAxis
+from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
+from PySide6.QtCore import Qt, QPropertyAnimation, Signal, QEasingCurve,QTimer
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
 
 
-# ---------- Mock Data ----------
+#! ---------- Data ----------
 
 key = bytes.fromhex("6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79")
 iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
@@ -36,9 +39,9 @@ def decrypt_data(enc_data: str):
 
 DATA = {
     "Gold": [1.1, 1.4, 2.5, 2.1, 3.0, 2.8, 3.5, 5.5, 6.7, 7.2],
-    "Coin": [0.8, 1.2, 1.9, 2.8, 2.4, 2.8, 3.5, 5.6, 6.8, 7.2],
-    "USD": [1.5, 1.6, 1.7, 1.8, 1.9, 2.8, 3.5, 5.2, 6.1, 7.2],
-    "USDT": [1.2, 1.3, 1.6, 2.0, 2.6, 2.8, 3.5, 4.3, 6.6, 7.2],
+    "Coin": [0.8, 1.2, 1.9, 2.8, 2.4, 2.8, 3.5, 5.6, 6.8, 4.2],
+    "USD": [1.5, 1.6, 1.7, 1.8, 1.9, 2.8, 3.5, 5.2, 6.1, 10.5],
+    "USDT": [4.3, 1.3, 1.6, 2.0, 2.6, 2.8, 3.5, 4.3, 6.6, 15.7, 17.6],
 }
 
 COLORS = {
@@ -47,12 +50,12 @@ COLORS = {
     "USD": "#6366F1",
     "USDT": "#22C55E",
 }
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 buttons = [
-    ("Gold", COLORS["Gold"], "D:/Programing/GCPMS/pics/gold.png", False),
-    ("Coin", COLORS["Coin"], "D:/Programing/GCPMS/pics/coin.png", False),
-    ("USD", COLORS["USD"], "D:/Programing/GCPMS/pics/dollar.png", False),
-    ("USDT", COLORS["USDT"], "D:/Programing/GCPMS/pics/tether.png", True),  # GIF
+    ("Gold", COLORS["Gold"], os.path.join(BASE_DIR, "pics", "gold.png"), False),
+    ("Coin", COLORS["Coin"], os.path.join(BASE_DIR, "pics", "coin.png"), False),
+    ("USD", COLORS["USD"], os.path.join(BASE_DIR, "pics", "dollar.png"), False),
+    ("USDT", COLORS["USDT"], os.path.join(BASE_DIR, "pics", "tether.png"), False),
 ]
 
 
@@ -99,49 +102,48 @@ class AnimatedChart(QChartView):
 
         self.chart = QChart()
         self.chart.legend().hide()
-
         self.setChart(self.chart)
-
-        # ? fade effect
-        self.opacity = QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.anim = QPropertyAnimation(self.opacity, b"opacity")
-        self.anim.setDuration(300)
-        self.anim.finished.connect(self._on_fade_finished)
         self.next_key = None
-
         self._set_data("Gold")
 
     def update_chart(self, key):
+        self._set_data(key)
         self.chartChanged.emit(key)
-        self.next_key = key
-        self.anim.stop()
-        self.anim.setStartValue(1.0)
-        self.anim.setEndValue(0.0)
-        self.anim.start()
 
-    def _on_fade_finished(self):
-        if self.opacity.opacity() == 0.0 and self.next_key:
-            self._set_data(self.next_key)
-            self.next_key = None
-            self.anim.setStartValue(0.0)
-            self.anim.setEndValue(1.0)
-            self.anim.start()
+        self.next_key = key
 
     def _set_data(self, key):
         self.chart.removeAllSeries()
         series = QLineSeries()
-        series.setPen(QPen(QColor("#9CA3AF"), 3))
 
-        for i, v in enumerate(DATA[key]):
+        series.setPen(
+            QPen(QColor(COLORS.get(key, "#9CA3AF")), 3, Qt.SolidLine, Qt.RoundCap)
+        )
+
+        data = DATA[key]
+        for i, v in enumerate(data):
             series.append(i, v)
 
         self.chart.addSeries(series)
-        self.chart.createDefaultAxes()
+
+        axis_x = QValueAxis()
+        axis_x.setLabelsVisible(True)
+        axis_x.setGridLineColor(QColor("#EDEDF1"))
+        axis_x.setLabelsColor(QColor("#55585E"))
+
+        axis_y = QValueAxis()
+
+        axis_y.setLabelFormat("%.1f")
+        axis_y.setGridLineColor(QColor("#EDEDF1"))
+        axis_y.setLabelsColor(QColor("#55585E"))
 
         for axis in self.chart.axes():
-            axis.setGridLineColor(QColor("#EDEDF1"))
-            axis.setLabelsColor(QColor("#55585E"))
+            self.chart.removeAxis(axis)
+
+        self.chart.addAxis(axis_x, Qt.AlignBottom)
+        self.chart.addAxis(axis_y, Qt.AlignLeft)
+        series.attachAxis(axis_x)
+        series.attachAxis(axis_y)
 
 
 #! ---------- Coin Button ----------
@@ -202,37 +204,76 @@ class MainWindow(QMainWindow):
         central.setStyleSheet("background-color: #F6F7F9;")
         self.setCentralWidget(central)
 
+        chart_page = self.chart_card()
+        settings_page = self.settings_page()
+
+        self.stack = QStackedWidget()
+        self.stack.addWidget(chart_page)
+        self.stack.addWidget(settings_page)
+
+        self.settings_opacity = QGraphicsOpacityEffect()
+        settings_page.setGraphicsEffect(self.settings_opacity)
+        self.settings_anim = QPropertyAnimation(self.settings_opacity, b"opacity")
+        self.settings_anim.setDuration(300)
+        self.settings_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.next_index = 0
+
         root = QHBoxLayout(central)
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(20)
 
         root.addWidget(self.sidebar(), 1)
-        root.addLayout(self.main_content(), 9)
+
+        main_area = QHBoxLayout()
+        main_area.setSpacing(20)
+        main_area.setContentsMargins(0, 0, 0, 0)
+        main_area.addWidget(self.stack, 3)
+        main_area.addWidget(self.right_panel(), 1)
+        main_wrapper = QVBoxLayout()
+        main_wrapper.addWidget(self.header())
+        main_wrapper.addLayout(main_area)
+        main_wrapper.setSpacing(20)
+        root.addLayout(main_wrapper, 9)
+
+        # Connect sidebar
+        self.home_btn.clicked.connect(lambda: self.switch_page(0))
+        self.settings_btn.clicked.connect(lambda: self.switch_page(1))
+        self.home_btn.setChecked(True)
+
+    def switch_page(self, index):
+        if index == self.stack.currentIndex():
+            return
+        self.next_index = index
+
+        if index == 1:
+            self.settings_opacity.setOpacity(0)
+            self.stack.setCurrentIndex(index)
+            self.settings_anim.stop()
+            self.settings_anim.setStartValue(0)
+            self.settings_anim.setEndValue(1)
+            self.settings_anim.start()
+        else:
+            self.stack.setCurrentIndex(index)
 
     #! ---------- Sidebar ----------
     def sidebar(self):
         frame = Card()
         frame.setFixedWidth(80)
+
         layout = QVBoxLayout(frame)
-        layout.setAlignment(Qt.AlignTop)
+        layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         layout.setSpacing(20)
 
-        # دکمه‌ها
-        buttons = []
-        icons = ["🏠", "⚙"]
-        names = ["Home", "Settings"]
+        self.home_btn = QPushButton("🏠")
+        self.settings_btn = QPushButton("⚙")
 
-        group = QButtonGroup(self)
-        group.setExclusive(True)
-
-        for icon, name in zip(icons, names):
-            btn = QPushButton(icon)
+        for btn in (self.home_btn, self.settings_btn):
             btn.setCheckable(True)
             btn.setFixedSize(48, 48)
             btn.setStyleSheet(
                 """
                 QPushButton {
-                    background-color: #EEF2FF; 
+                    background-color: #EEF2FF;
                     border-radius: 12px;
                     font-size: 18px;
                 }
@@ -240,19 +281,27 @@ class MainWindow(QMainWindow):
                     background-color: #E0E7FF;
                 }
                 QPushButton:checked {
-                    background-color: #3B82F6; 
+                    background-color: #3B82F6;
                     color: white;
                 }
             """
             )
-            layout.addWidget(btn, alignment=Qt.AlignHCenter)
-            # layout.addWidget(btn)
-            group.addButton(btn)
-            buttons.append(btn)
 
-        buttons[0].setChecked(True)
+        group = QButtonGroup(self)
+        group.setExclusive(True)
+        group.addButton(self.home_btn)
+        group.addButton(self.settings_btn)
 
+        # اتصال واقعی به stack
+        self.home_btn.clicked.connect(lambda: self.switch_page(0))
+        self.settings_btn.clicked.connect(lambda: self.switch_page(1))
+
+        self.home_btn.setChecked(True)
+
+        layout.addWidget(self.home_btn)
+        layout.addWidget(self.settings_btn)
         layout.addStretch()
+
         return frame
 
     #! ---------- Main Content ----------
@@ -265,7 +314,7 @@ class MainWindow(QMainWindow):
         body = QHBoxLayout()
         body.setSpacing(20)
 
-        body.addWidget(self.chart_card(), 3)
+        body.addWidget(self.stack, 3)
         body.addWidget(self.right_panel(), 1)
 
         layout.addLayout(body)
@@ -291,6 +340,7 @@ class MainWindow(QMainWindow):
         frame = Card()
         layout = QVBoxLayout(frame)
         layout.setContentsMargins(20, 16, 20, 20)
+
         layout.setSpacing(12)
 
         self.chart_title = QLabel("Gold Chart")
@@ -298,10 +348,11 @@ class MainWindow(QMainWindow):
             "font-weight: 600;background: transparent;border: none;font-size: 16px;color: #111827;padding-left: 40px;"
         )
         self.chart_view = AnimatedChart()
-        self.chart_view.setMinimumHeight(420)
         self.chart_view.chartChanged.connect(self.update_chart_title)
 
         layout.addWidget(self.chart_title)
+        layout.setAlignment(self.chart_view, Qt.AlignTop)
+
         layout.addWidget(self.chart_view)
 
         return frame
@@ -309,9 +360,11 @@ class MainWindow(QMainWindow):
     #! ---------- Right Panel ----------
     def right_panel(self):
         wrapper = QVBoxLayout()
+        
         wrapper.setSpacing(20)
 
         coin_card = Card()
+        
         coin_layout = QVBoxLayout(coin_card)
         coin_layout.setContentsMargins(20, 16, 20, 20)
         coin_layout.setSpacing(12)
@@ -337,7 +390,7 @@ class MainWindow(QMainWindow):
         group.buttons()[0].setChecked(True)
 
         update_card = Card()
-        update_card.setFixedHeight(180)
+        # update_card.setFixedHeight(180)
         up_layout = QVBoxLayout(update_card)
         up_layout.setContentsMargins(20, 16, 20, 20)
         up_layout.setSpacing(12)
@@ -349,8 +402,10 @@ class MainWindow(QMainWindow):
         label.setAlignment(Qt.AlignCenter)
         up_layout.addWidget(label)
 
+        
+
         key = QLineEdit()
-        key.setPlaceholderText("Enter API Key")
+        key.setPlaceholderText("Enter Key")
         key.setStyleSheet(
             """
             color: #374151;
@@ -360,6 +415,19 @@ class MainWindow(QMainWindow):
         """
         )
         up_layout.addWidget(key)
+        
+        #! --- Notification QLabel  ---
+        notif = QLabel("", update_card)
+        notif.setStyleSheet("background: transparent; color: white; border: none; padding: 10px;")
+        notif.setAlignment(Qt.AlignCenter)
+        notif.setVisible(False)
+        up_layout.addWidget(notif, alignment=Qt.AlignTop)
+
+        def show_notification(text, color="#22C55E", duration=2000):
+            notif.setText(text)
+            notif.setStyleSheet(f"background: {color}; color: white; padding: 10px; border-radius: 5px;")
+            notif.setVisible(True)
+            QTimer.singleShot(duration, lambda: notif.setVisible(False))
 
         btn = QPushButton("Download")
         btn.setStyleSheet(
@@ -378,6 +446,15 @@ class MainWindow(QMainWindow):
         )
         up_layout.addWidget(btn)
 
+        def download_clicked():
+            if not key.text().strip():
+                show_notification("Please enter Key!", color="#F87171")  
+            else:
+                show_notification("Downloaded successfully!", color="#22C55E")  
+           
+
+        btn.clicked.connect(download_clicked)
+
         wrapper.addWidget(coin_card)
         wrapper.addWidget(update_card)
         wrapper.addStretch()
@@ -386,11 +463,140 @@ class MainWindow(QMainWindow):
         panel.setLayout(wrapper)
         return panel
 
+
+    #! ---------- Settings Page ----------
+    def settings_page(self):
+        frame = Card()
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(40, 0, 40, 30)
+        layout.setSpacing(18)
+
+        title = QLabel("Settings")
+        title.setStyleSheet(
+            "font-size: 18px; font-weight: 600;color: #111827;border: none;background: transparent;"
+        )
+        layout.addWidget(title)
+
+        inputs = []
+
+        def input_row(label_text, placeholder):
+            box = QVBoxLayout()
+            lbl = QLabel(label_text)
+            lbl.setStyleSheet(
+                "font-weight: 500; color: #374151;border: none;background: transparent;"
+            )
+
+            edit = QLineEdit()
+            edit.setFixedWidth(350)
+            edit.setPlaceholderText(placeholder)
+            edit.setStyleSheet(
+                """
+                color: #374151;
+                padding: 10px;
+                border-radius: 10px;
+                border: none;
+            """
+            )
+            box.addWidget(lbl, alignment=Qt.AlignCenter)
+            box.addWidget(edit, alignment=Qt.AlignCenter)
+
+            inputs.append(edit)
+            return box
+
+        layout.addLayout(input_row("<b>IP</b>", "127.0.0.1"))
+        layout.addLayout(input_row("<b>SFTP Port</b>", "22"))
+        layout.addLayout(input_row("<b>Username</b>", "Username"))
+
+        def password_row(label_text, placeholder):
+            box = QVBoxLayout()
+            lbl = QLabel(label_text)
+            lbl.setStyleSheet(
+                "font-weight: 500; color: #374151;border: none;background: transparent;"
+            )
+            lbl.setAlignment(Qt.AlignCenter)
+
+            edit = QLineEdit()
+            edit.setFixedWidth(350)
+            edit.setEchoMode(QLineEdit.Password)
+            edit.setPlaceholderText(placeholder)
+            edit.setStyleSheet(
+                """
+                color: #374151;
+                padding: 10px;
+                border-radius: 10px;
+                border: none;
+            """
+            )
+            box.addWidget(lbl, alignment=Qt.AlignCenter)
+            box.addWidget(edit, alignment=Qt.AlignCenter)
+
+            inputs.append(edit)
+            return box
+
+        layout.addLayout(password_row("<b>Password</b>", "********"))
+
+        #! --- Notification QLabel ---
+        notif = QLabel("", frame)
+        notif.setStyleSheet("background: transparent; color: white;border: none; padding: 10px; ")
+        notif.setFixedWidth(350)
+        notif.setAlignment(Qt.AlignCenter)
+        notif.setVisible(True)  
+        layout.addWidget(notif, alignment=Qt.AlignCenter)
+        
+        opacity_effect = QGraphicsOpacityEffect()
+        notif.setGraphicsEffect(opacity_effect)
+        opacity_anim = QPropertyAnimation(opacity_effect, b"opacity")
+        opacity_anim.setDuration(500) 
+
+        def show_notification(text, color="#22C55E"):
+            notif.setText(text)
+            notif.setStyleSheet(f"background: {color}; color: white; padding: 10px; border-radius: 5px;")
+            notif.setVisible(True)
+            
+            QTimer.singleShot(2000, lambda: notif.setStyleSheet("background: transparent; color: white;border: none; padding: 10px; "))
+
+        save = QPushButton("Save")
+        save.setFixedWidth(120)
+        save.setStyleSheet(
+            """
+            QPushButton {
+                background: #22C55E;
+                color: white;
+                padding: 10px;
+                border-radius: 10px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background: #16A34A;
+            }
+        """
+        )
+
+        def save_clicked():
+            empty_fields = [i for i in inputs if not i.text().strip()]
+            if empty_fields:
+                show_notification("Please fill in all fields!", color="#F87171")  
+            else:
+                show_notification("Settings saved successfully!", color="#22C55E")
+
+        save.clicked.connect(save_clicked)
+        layout.addWidget(save, alignment=Qt.AlignHCenter)
+
+        return frame
+
+    def _on_fade_out(self):
+        self.stack.setCurrentIndex(self.next_index)
+
+        self.stack_anim.finished.disconnect(self._on_fade_out)
+        self.stack_anim.setStartValue(0.0)
+        self.stack_anim.setEndValue(1.0)
+        self.stack_anim.start()
+
     def update_chart_title(self, name):
         self.chart_title.setText(f"{name} Chart")
 
 
-# ---------- Run ----------
+#! ---------- Run ----------
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
