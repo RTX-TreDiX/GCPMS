@@ -5,7 +5,11 @@ import datetime
 import csv
 import os
 import base64
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
+key = bytes.fromhex("6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79")
+iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
 
 URL = "https://www.tgju.org/"
 
@@ -36,6 +40,10 @@ def get_gold_price():
 def get_coin_price():
     return fetch_price("l-sekee")
 
+def encrypt_data(data: str) -> str:
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    encrypted = cipher.encrypt(pad(data.encode(), AES.block_size))
+    return base64.b64encode(encrypted).decode()
 
 
 
@@ -61,9 +69,9 @@ if __name__ == "__main__":
             coin = get_coin_price()
 
             raw_data = f"{tether},{usd},{gold},{coin}"
-            
+            encrypted_data = encrypt_data(raw_data)
 
-            write_to_csv(FILE_NAME, [now, raw_data])
+            write_to_csv(FILE_NAME, [now, encrypted_data])
 
             print(f"Logged data at {now}")
 
