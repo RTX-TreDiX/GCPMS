@@ -20,8 +20,15 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 from PySide6.QtGui import QColor, QPainter, QPen, QPixmap, QIcon
-from PySide6.QtCore import Qt, QPropertyAnimation, Signal, QEasingCurve,QDateTime, QTimer
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis ,QDateTimeAxis
+from PySide6.QtCore import (
+    Qt,
+    QPropertyAnimation,
+    Signal,
+    QEasingCurve,
+    QDateTime,
+    QTimer,
+)
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis
 
 
 def encrypt_aes(text):
@@ -64,7 +71,7 @@ DATA = {
     "Time": [],
     "Gold": [],
     "Coin": [],
-    "USD":  [],
+    "USD": [],
     "USDT": [],
 }
 
@@ -82,20 +89,23 @@ buttons = [
     ("USDT", COLORS["USDT"], os.path.join(BASE_DIR, "pics", "tether.png"), False),
 ]
 
+
 def load_data():
     with open("Prices.csv", "r", encoding="utf-8") as f:
         encrypted_data = f.readlines()
         for line in encrypted_data:
-            line = line.strip().split(',')
+            line = line.strip().split(",")
             DATA["Time"].append(line[0])
-            decrypted_line = decrypt_aes(line[1],key).split(',') #?time
-            DATA["Gold"].append(int(decrypted_line[0]))           #?gold
-            DATA["Coin"].append(int(decrypted_line[1]))           #?coin
-            DATA["USD"].append(int(decrypted_line[2]))            #?usd
-            DATA["USDT"].append(int(decrypted_line[3]))           #?usdt
+            decrypted_line = decrypt_aes(line[1], key).split(",")  # ?time
+            DATA["Gold"].append(int(decrypted_line[0]))  # ?gold
+            DATA["Coin"].append(int(decrypted_line[1]))  # ?coin
+            DATA["USD"].append(int(decrypted_line[2]))  # ?usd
+            DATA["USDT"].append(int(decrypted_line[3]))  # ?usdt
 
-        
+
 load_data()
+
+
 #! ---------- Card ----------
 class Card(QFrame):
     def __init__(self):
@@ -157,17 +167,17 @@ class AnimatedChart(QChartView):
             QPen(QColor(COLORS.get(key, "#9CA3AF")), 3, Qt.SolidLine, Qt.RoundCap)
         )
 
-        data = DATA[key]  
-        times = DATA['Time'] 
+        data = DATA[key]
+        times = DATA["Time"]
 
         for t, v in zip(times, data):
             dt = QDateTime.fromString(t, "yyyy-MM-dd HH:mm:ss")
-            series.append(dt.toMSecsSinceEpoch(), v)  # محور x به میلی‌ثانیه
+            series.append(dt.toMSecsSinceEpoch(), v)
 
         self.chart.addSeries(series)
 
         axis_x = QDateTimeAxis()
-        axis_x.setFormat("MM-dd HH:mm")  # فرمت نمایش تاریخ
+        axis_x.setFormat("MM-dd HH:mm")
         axis_x.setTitleText("Time")
         axis_x.setLabelsColor(QColor("#55585E"))
         axis_x.setGridLineColor(QColor("#EDEDF1"))
@@ -275,7 +285,6 @@ class MainWindow(QMainWindow):
         main_wrapper.setSpacing(20)
         root.addLayout(main_wrapper, 9)
 
-        # Connect sidebar
         self.home_btn.clicked.connect(lambda: self.switch_page(0))
         self.settings_btn.clicked.connect(lambda: self.switch_page(1))
         self.home_btn.setChecked(True)
@@ -332,7 +341,6 @@ class MainWindow(QMainWindow):
         group.addButton(self.home_btn)
         group.addButton(self.settings_btn)
 
-        # اتصال واقعی به stack
         self.home_btn.clicked.connect(lambda: self.switch_page(0))
         self.settings_btn.clicked.connect(lambda: self.switch_page(1))
 
@@ -413,10 +421,10 @@ class MainWindow(QMainWindow):
         group.setExclusive(True)
 
         buttons = [
-            ("Gold", COLORS["Gold"], "D:/Programing/GCPMS/pics/gold.png"),
-            ("Coin", COLORS["Coin"], "D:/Programing/GCPMS/pics/coin.png"),
-            ("USD", COLORS["USD"], "D:/Programing/GCPMS/pics/dollar.png"),
-            ("USDT", COLORS["USDT"], "D:/Programing/GCPMS/pics/tether.png"),
+            ("Gold", COLORS["Gold"], os.path.join(BASE_DIR, "pics", "gold.png")),
+            ("Coin", COLORS["Coin"], os.path.join(BASE_DIR, "pics", "coin.png")),
+            ("USD", COLORS["USD"], os.path.join(BASE_DIR, "pics", "dollar.png")),
+            ("USDT", COLORS["USDT"], os.path.join(BASE_DIR, "pics", "tether.png")),
         ]
 
         for name, color, path in buttons:
@@ -473,7 +481,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(duration, lambda: notif.setVisible(False))
 
         btn = QPushButton("Download")
-        
+
         btn.setStyleSheet(
             """
             QPushButton {
@@ -602,7 +610,6 @@ class MainWindow(QMainWindow):
                 show_notification("Downloaded successfully!", color="#22C55E")
                 load_data()
                 self.chart_view._set_data("Gold")
-                
 
         btn.clicked.connect(download_clicked)
 
