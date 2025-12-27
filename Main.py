@@ -29,6 +29,19 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis
+def ensure_data_files():
+    prices_path = os.path.join(os.getcwd(), "Prices.csv")
+    settings_path = os.path.join(os.getcwd(), "settings.csv")
+
+    # Prices.csv
+    if not os.path.exists(prices_path):
+        with open(prices_path, "w", encoding="utf-8") as f:
+            pass  # empty file
+
+    # settings.csv
+    if not os.path.exists(settings_path):
+        with open(settings_path, "w", encoding="utf-8") as f:
+            pass  # empty file
 
 
 def encrypt_aes(text):
@@ -47,7 +60,7 @@ def decrypt_aes(enc_text, key):
 
 
 def download_via_sftp(key):
-    file_path = "settings.csv"
+    file_path = app_path("settings.csv")
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read().strip()
@@ -60,6 +73,15 @@ def download_via_sftp(key):
                 return "1"
     return "2"
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+def app_path(filename):
+    return os.path.join(os.getcwd(), filename)
 
 #! ---------- Data ----------
 
@@ -81,17 +103,17 @@ COLORS = {
     "USD": "#6366F1",
     "USDT": "#22C55E",
 }
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 buttons = [
-    ("Gold", COLORS["Gold"], os.path.join(BASE_DIR, "pics", "gold.png"), False),
-    ("Coin", COLORS["Coin"], os.path.join(BASE_DIR, "pics", "coin.png"), False),
-    ("USD", COLORS["USD"], os.path.join(BASE_DIR, "pics", "dollar.png"), False),
-    ("USDT", COLORS["USDT"], os.path.join(BASE_DIR, "pics", "tether.png"), False),
+    ("Gold", COLORS["Gold"], resource_path('pics/gold.png'  ), False),
+    ("Coin", COLORS["Coin"], resource_path('pics/coin.png'  ), False),
+    ("USD", COLORS["USD"],   resource_path('pics/dollar.png'), False),
+    ("USDT", COLORS["USDT"], resource_path('pics/tether.png'), False),
 ]
 
 
 def load_data():
-    with open("Prices.csv", "r", encoding="utf-8") as f:
+    with open(app_path("Prices.csv"), "r", encoding="utf-8") as f:
         encrypted_data = f.readlines()
         for line in encrypted_data:
             line = line.strip().split(",")
@@ -103,7 +125,7 @@ def load_data():
             DATA["USDT"].append(int(decrypted_line[3]))  # ?usdt
 
 
-load_data()
+
 
 
 #! ---------- Card ----------
@@ -421,10 +443,10 @@ class MainWindow(QMainWindow):
         group.setExclusive(True)
 
         buttons = [
-            ("Gold", COLORS["Gold"], os.path.join(BASE_DIR, "pics", "gold.png")),
-            ("Coin", COLORS["Coin"], os.path.join(BASE_DIR, "pics", "coin.png")),
-            ("USD", COLORS["USD"], os.path.join(BASE_DIR, "pics", "dollar.png")),
-            ("USDT", COLORS["USDT"], os.path.join(BASE_DIR, "pics", "tether.png")),
+            ("Gold", COLORS["Gold"], resource_path('pics/gold.png'  )),
+            ("Coin", COLORS["Coin"], resource_path('pics/coin.png'  )),
+            ("USD", COLORS["USD"],   resource_path('pics/dollar.png')),
+            ("USDT", COLORS["USDT"], resource_path('pics/tether.png')),
         ]
 
         for name, color, path in buttons:
@@ -504,7 +526,7 @@ class MainWindow(QMainWindow):
                 return
 
             confirm = QMessageBox(btn)
-            confirm.setWindowIcon(QIcon("pics/ask.png"))
+            confirm.setWindowIcon(QIcon(resource_path("pics/ask.png")))
             confirm.setWindowTitle("Confirm Download")
             confirm.setText("Do you want to download the data using this key?")
             confirm.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -530,7 +552,7 @@ class MainWindow(QMainWindow):
                 # ❌ Wrong Key
                 if result == "1":
                     error_msg = QMessageBox(btn)
-                    error_msg.setWindowIcon(QIcon("pics/exclamation.png"))
+                    error_msg.setWindowIcon(QIcon(resource_path("pics/exclamation.png")))
                     error_msg.setStyleSheet(
                         """
                                 QMessageBox QLabel {
@@ -567,7 +589,7 @@ class MainWindow(QMainWindow):
                         "Connection settings not found. Please configure settings first."
                     )
                     error_msg.setIcon(QMessageBox.Warning)
-                    error_msg.setWindowIcon(QIcon("pics/warning.png"))
+                    error_msg.setWindowIcon(QIcon(resource_path("pics/warning.png")))
                     error_msg.setStandardButtons(QMessageBox.Ok)
                     error_msg.exec()
                     return
@@ -578,7 +600,7 @@ class MainWindow(QMainWindow):
                     transport.connect(username=row[2], password=row[3])
 
                     sftp = paramiko.SFTPClient.from_transport(transport)
-                    sftp.get("/home/debian/Prices.csv", "Prices.csv")
+                    sftp.get("/home/debian/Prices.csv", app_path("Prices.csv"))
 
                 except Exception as e:
                     sftp_error = QMessageBox(btn)
@@ -596,7 +618,7 @@ class MainWindow(QMainWindow):
                     sftp_error.setWindowTitle("SFTP connection error")
                     sftp_error.setText(e)
                     sftp_error.setIcon(QMessageBox.Critical)
-                    sftp_error.setWindowIcon(QIcon("pics/exclamation.png"))
+                    sftp_error.setWindowIcon(QIcon(resource_path("pics/exclamation.png")))
                     sftp_error.setStandardButtons(QMessageBox.Ok)
                     sftp_error.exec()
 
@@ -744,7 +766,7 @@ class MainWindow(QMainWindow):
                 show_notification("Please fill in all fields!", color="#F87171")
                 return
 
-            file_path = "settings.csv"
+            file_path = app_path("settings.csv")
             row = [
                 inputs[0].text().strip(),
                 inputs[1].text().strip(),
@@ -777,6 +799,8 @@ class MainWindow(QMainWindow):
 
 #! ---------- Run ----------
 if __name__ == "__main__":
+    ensure_data_files()
+    load_data()
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
