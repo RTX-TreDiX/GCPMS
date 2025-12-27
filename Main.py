@@ -117,12 +117,13 @@ def load_data():
         encrypted_data = f.readlines()
         for line in encrypted_data:
             line = line.strip().split(",")
-            DATA["Time"].append(line[0])
-            decrypted_line = decrypt_aes(line[1], key).split(",")  # ?time
-            DATA["Gold"].append(int(decrypted_line[0]))  # ?gold
-            DATA["Coin"].append(int(decrypted_line[1]))  # ?coin
-            DATA["USD"].append(int(decrypted_line[2]))  # ?usd
-            DATA["USDT"].append(int(decrypted_line[3]))  # ?usdt
+            if line[0] not in DATA['Time']:
+                DATA["Time"].append(line[0])
+                decrypted_line = decrypt_aes(line[1], key).split(",")  # ?time
+                DATA["Gold"].append(int(decrypted_line[0]))  # ?gold
+                DATA["Coin"].append(int(decrypted_line[1]))  # ?coin
+                DATA["USD"].append(int(decrypted_line[2]))  # ?usd
+                DATA["USDT"].append(int(decrypted_line[3]))  # ?usdt
 
 
 
