@@ -29,6 +29,8 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis
+
+
 def ensure_data_files():
     prices_path = os.path.join(os.getcwd(), "Prices.csv")
     settings_path = os.path.join(os.getcwd(), "settings.csv")
@@ -73,6 +75,7 @@ def download_via_sftp(key):
                 return "1"
     return "2"
 
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -80,8 +83,10 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+
 def app_path(filename):
     return os.path.join(os.getcwd(), filename)
+
 
 #! ---------- Data ----------
 
@@ -105,10 +110,10 @@ COLORS = {
 }
 
 buttons = [
-    ("Gold", COLORS["Gold"], resource_path('pics/gold.png'  ), False),
-    ("Coin", COLORS["Coin"], resource_path('pics/coin.png'  ), False),
-    ("USD", COLORS["USD"],   resource_path('pics/dollar.png'), False),
-    ("USDT", COLORS["USDT"], resource_path('pics/tether.png'), False),
+    ("Gold", COLORS["Gold"], resource_path("pics/gold.png"), False),
+    ("Coin", COLORS["Coin"], resource_path("pics/coin.png"), False),
+    ("USD", COLORS["USD"], resource_path("pics/dollar.png"), False),
+    ("USDT", COLORS["USDT"], resource_path("pics/tether.png"), False),
 ]
 
 
@@ -117,16 +122,13 @@ def load_data():
         encrypted_data = f.readlines()
         for line in encrypted_data:
             line = line.strip().split(",")
-            if line[0] not in DATA['Time']:
+            if line[0] not in DATA["Time"]:
                 DATA["Time"].append(line[0])
                 decrypted_line = decrypt_aes(line[1], key).split(",")  # ?time
                 DATA["Gold"].append(int(decrypted_line[0]))  # ?gold
                 DATA["Coin"].append(int(decrypted_line[1]))  # ?coin
                 DATA["USD"].append(int(decrypted_line[2]))  # ?usd
                 DATA["USDT"].append(int(decrypted_line[3]))  # ?usdt
-
-
-
 
 
 #! ---------- Card ----------
@@ -430,6 +432,7 @@ class MainWindow(QMainWindow):
 
     #! ---------- Right Panel ----------
     def right_panel(self):
+
         wrapper = QVBoxLayout()
 
         wrapper.setSpacing(20)
@@ -444,11 +447,17 @@ class MainWindow(QMainWindow):
         group.setExclusive(True)
 
         buttons = [
-            ("Gold", COLORS["Gold"], resource_path('pics/gold.png'  )),
-            ("Coin", COLORS["Coin"], resource_path('pics/coin.png'  )),
-            ("USD", COLORS["USD"],   resource_path('pics/dollar.png')),
-            ("USDT", COLORS["USDT"], resource_path('pics/tether.png')),
+            ("Gold", COLORS["Gold"], resource_path("pics/gold.png")),
+            ("Coin", COLORS["Coin"], resource_path("pics/coin.png")),
+            ("USD", COLORS["USD"], resource_path("pics/dollar.png")),
+            ("USDT", COLORS["USDT"], resource_path("pics/tether.png")),
         ]
+
+        def get_checked_coin():
+            for btn in group.buttons():
+                if btn.isChecked():
+                    return btn.text()
+            return None
 
         for name, color, path in buttons:
             btn_widget = CoinButton(name, color, path)
@@ -553,7 +562,9 @@ class MainWindow(QMainWindow):
                 # ❌ Wrong Key
                 if result == "1":
                     error_msg = QMessageBox(btn)
-                    error_msg.setWindowIcon(QIcon(resource_path("pics/exclamation.png")))
+                    error_msg.setWindowIcon(
+                        QIcon(resource_path("pics/exclamation.png"))
+                    )
                     error_msg.setStyleSheet(
                         """
                                 QMessageBox QLabel {
@@ -619,7 +630,9 @@ class MainWindow(QMainWindow):
                     sftp_error.setWindowTitle("SFTP connection error")
                     sftp_error.setText(e)
                     sftp_error.setIcon(QMessageBox.Critical)
-                    sftp_error.setWindowIcon(QIcon(resource_path("pics/exclamation.png")))
+                    sftp_error.setWindowIcon(
+                        QIcon(resource_path("pics/exclamation.png"))
+                    )
                     sftp_error.setStandardButtons(QMessageBox.Ok)
                     sftp_error.exec()
 
@@ -632,7 +645,8 @@ class MainWindow(QMainWindow):
 
                 show_notification("Downloaded successfully!", color="#22C55E")
                 load_data()
-                self.chart_view._set_data("Gold")
+
+                self.chart_view._set_data(get_checked_coin())
 
         btn.clicked.connect(download_clicked)
 
