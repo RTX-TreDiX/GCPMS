@@ -3,3 +3,4 @@ beautifulsoup4
 pycryptodome
 PySide6
 PySide6-Charts
+paramiko

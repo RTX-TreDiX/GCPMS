@@ -1,5 +1,5 @@
 import sys
-import os
+import os, paramiko
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
@@ -17,31 +17,55 @@ from PySide6.QtWidgets import (
     QGraphicsOpacityEffect,
     QButtonGroup,
     QStackedWidget,
-    QMessageBox
+    QMessageBox,
 )
-from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
-from PySide6.QtCore import Qt, QPropertyAnimation, Signal, QEasingCurve,QTimer
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
+from PySide6.QtGui import QColor, QPainter, QPen, QPixmap, QIcon
+from PySide6.QtCore import Qt, QPropertyAnimation, Signal, QEasingCurve,QDateTime, QTimer
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis ,QDateTimeAxis
+
+
+def encrypt_aes(text):
+    cipher = AES.new(bytes.fromhex(key), AES.MODE_CBC, iv)
+    encrypted = cipher.encrypt(pad(text.encode("utf-8"), AES.block_size))
+    return base64.b64encode(encrypted).decode("utf-8")
+
+
+def decrypt_aes(enc_text, key):
+    try:
+        cipher = AES.new(bytes.fromhex(key), AES.MODE_CBC, iv)
+        decrypted = unpad(cipher.decrypt(base64.b64decode(enc_text)), AES.block_size)
+        return decrypted.decode("utf-8")
+    except Exception as e:
+        return False
+
+
+def download_via_sftp(key):
+    file_path = "settings.csv"
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            if content == "":
+                return "2"
+            reader = decrypt_aes(content, key)
+            if reader:
+                return reader
+            else:
+                return "1"
+    return "2"
 
 
 #! ---------- Data ----------
 
-key = bytes.fromhex("6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79")
+key = "6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"
 iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
 
 
-def decrypt_data(enc_data: str):
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    decoded = base64.b64decode(enc_data)
-    decrypted = unpad(cipher.decrypt(decoded), AES.block_size)
-    return decrypted.decode()
-
-
 DATA = {
-    "Gold": [1.1, 1.4, 2.5, 2.1, 3.0, 2.8, 3.5, 5.5, 6.7, 7.2],
-    "Coin": [0.8, 1.2, 1.9, 2.8, 2.4, 2.8, 3.5, 5.6, 6.8, 4.2],
-    "USD": [1.5, 1.6, 1.7, 1.8, 1.9, 2.8, 3.5, 5.2, 6.1, 10.5],
-    "USDT": [4.3, 1.3, 1.6, 2.0, 2.6, 2.8, 3.5, 4.3, 6.6, 15.7, 17.6],
+    "Time": [],
+    "Gold": [],
+    "Coin": [],
+    "USD":  [],
+    "USDT": [],
 }
 
 COLORS = {
@@ -58,7 +82,20 @@ buttons = [
     ("USDT", COLORS["USDT"], os.path.join(BASE_DIR, "pics", "tether.png"), False),
 ]
 
+def load_data():
+    with open("Prices.csv", "r", encoding="utf-8") as f:
+        encrypted_data = f.readlines()
+        for line in encrypted_data:
+            line = line.strip().split(',')
+            DATA["Time"].append(line[0])
+            decrypted_line = decrypt_aes(line[1],key).split(',') #?time
+            DATA["Gold"].append(int(decrypted_line[0]))           #?gold
+            DATA["Coin"].append(int(decrypted_line[1]))           #?coin
+            DATA["USD"].append(int(decrypted_line[2]))            #?usd
+            DATA["USDT"].append(int(decrypted_line[3]))           #?usdt
 
+        
+load_data()
 #! ---------- Card ----------
 class Card(QFrame):
     def __init__(self):
@@ -120,19 +157,22 @@ class AnimatedChart(QChartView):
             QPen(QColor(COLORS.get(key, "#9CA3AF")), 3, Qt.SolidLine, Qt.RoundCap)
         )
 
-        data = DATA[key]
-        for i, v in enumerate(data):
-            series.append(i, v)
+        data = DATA[key]  
+        times = DATA['Time'] 
+
+        for t, v in zip(times, data):
+            dt = QDateTime.fromString(t, "yyyy-MM-dd HH:mm:ss")
+            series.append(dt.toMSecsSinceEpoch(), v)  # محور x به میلی‌ثانیه
 
         self.chart.addSeries(series)
 
-        axis_x = QValueAxis()
-        axis_x.setLabelsVisible(True)
-        axis_x.setGridLineColor(QColor("#EDEDF1"))
+        axis_x = QDateTimeAxis()
+        axis_x.setFormat("MM-dd HH:mm")  # فرمت نمایش تاریخ
+        axis_x.setTitleText("Time")
         axis_x.setLabelsColor(QColor("#55585E"))
+        axis_x.setGridLineColor(QColor("#EDEDF1"))
 
         axis_y = QValueAxis()
-
         axis_y.setLabelFormat("%.1f")
         axis_y.setGridLineColor(QColor("#EDEDF1"))
         axis_y.setLabelsColor(QColor("#55585E"))
@@ -360,11 +400,11 @@ class MainWindow(QMainWindow):
     #! ---------- Right Panel ----------
     def right_panel(self):
         wrapper = QVBoxLayout()
-        
+
         wrapper.setSpacing(20)
 
         coin_card = Card()
-        
+
         coin_layout = QVBoxLayout(coin_card)
         coin_layout.setContentsMargins(20, 16, 20, 20)
         coin_layout.setSpacing(12)
@@ -402,8 +442,6 @@ class MainWindow(QMainWindow):
         label.setAlignment(Qt.AlignCenter)
         up_layout.addWidget(label)
 
-        
-
         key = QLineEdit()
         key.setPlaceholderText("Enter Key")
         key.setStyleSheet(
@@ -414,22 +452,28 @@ class MainWindow(QMainWindow):
             border: 1px solid #E5E7EB;
         """
         )
+
         up_layout.addWidget(key)
-        
+
         #! --- Notification QLabel  ---
         notif = QLabel("", update_card)
-        notif.setStyleSheet("background: transparent; color: white; border: none; padding: 10px;")
+        notif.setStyleSheet(
+            "background: transparent; color: white; border: none; padding: 10px;"
+        )
         notif.setAlignment(Qt.AlignCenter)
         notif.setVisible(False)
         up_layout.addWidget(notif, alignment=Qt.AlignTop)
 
         def show_notification(text, color="#22C55E", duration=2000):
             notif.setText(text)
-            notif.setStyleSheet(f"background: {color}; color: white; padding: 10px; border-radius: 5px;")
+            notif.setStyleSheet(
+                f"background: {color}; color: white; padding: 10px; border-radius: 5px;"
+            )
             notif.setVisible(True)
             QTimer.singleShot(duration, lambda: notif.setVisible(False))
 
         btn = QPushButton("Download")
+        
         btn.setStyleSheet(
             """
             QPushButton {
@@ -448,10 +492,117 @@ class MainWindow(QMainWindow):
 
         def download_clicked():
             if not key.text().strip():
-                show_notification("Please enter Key!", color="#F87171")  
-            else:
-                show_notification("Downloaded successfully!", color="#22C55E")  
-           
+                show_notification("Please enter Key!", color="#F87171")
+                return
+
+            confirm = QMessageBox(btn)
+            confirm.setWindowIcon(QIcon("pics/ask.png"))
+            confirm.setWindowTitle("Confirm Download")
+            confirm.setText("Do you want to download the data using this key?")
+            confirm.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            confirm.setDefaultButton(QMessageBox.No)
+            confirm.setIcon(QMessageBox.Question)
+            confirm.setStyleSheet(
+                """
+                QMessageBox QLabel {
+                    color: #111827;
+                    background: transparent;
+                    border: none;
+                    font-weight: 600;
+                    font-size: 13px;
+                }
+            """
+            )
+
+            reply = confirm.exec()
+
+            if reply == QMessageBox.Yes:
+                result = download_via_sftp(key.text().strip())
+
+                # ❌ Wrong Key
+                if result == "1":
+                    error_msg = QMessageBox(btn)
+                    error_msg.setWindowIcon(QIcon("pics/exclamation.png"))
+                    error_msg.setStyleSheet(
+                        """
+                                QMessageBox QLabel {
+                                    color: #111827;
+                                    background: transparent;
+                                    border: none;
+                                    font-weight: 600;
+                                    font-size: 13px;
+                                }
+                            """
+                    )
+
+                    error_msg.setWindowTitle("Wrong Key")
+                    error_msg.setText("The provided key is incorrect.")
+                    error_msg.setIcon(QMessageBox.Critical)
+                    error_msg.setStandardButtons(QMessageBox.Ok)
+                    error_msg.exec()
+                    return
+                elif result == "2":
+                    error_msg = QMessageBox(btn)
+                    error_msg.setStyleSheet(
+                        """
+                                QMessageBox QLabel {
+                                    color: #111827;
+                                    background: transparent;
+                                    border: none;
+                                    font-weight: 600;
+                                    font-size: 13px;
+                                }
+                            """
+                    )
+                    error_msg.setWindowTitle("Settings Not Found")
+                    error_msg.setText(
+                        "Connection settings not found. Please configure settings first."
+                    )
+                    error_msg.setIcon(QMessageBox.Warning)
+                    error_msg.setWindowIcon(QIcon("pics/warning.png"))
+                    error_msg.setStandardButtons(QMessageBox.Ok)
+                    error_msg.exec()
+                    return
+
+                row = result.split(",")
+                try:
+                    transport = paramiko.Transport((row[0], int(row[1])))
+                    transport.connect(username=row[2], password=row[3])
+
+                    sftp = paramiko.SFTPClient.from_transport(transport)
+                    sftp.get("/home/debian/Prices.csv", "Prices.csv")
+
+                except Exception as e:
+                    sftp_error = QMessageBox(btn)
+                    sftp_error.setStyleSheet(
+                        """
+                                QMessageBox QLabel {
+                                    color: #111827;
+                                    background: transparent;
+                                    border: none;
+                                    font-weight: 600;
+                                    font-size: 13px;
+                                }
+                            """
+                    )
+                    sftp_error.setWindowTitle("SFTP connection error")
+                    sftp_error.setText(e)
+                    sftp_error.setIcon(QMessageBox.Critical)
+                    sftp_error.setWindowIcon(QIcon("pics/exclamation.png"))
+                    sftp_error.setStandardButtons(QMessageBox.Ok)
+                    sftp_error.exec()
+
+                finally:
+                    try:
+                        sftp.close()
+                        transport.close()
+                    except:
+                        return
+
+                show_notification("Downloaded successfully!", color="#22C55E")
+                load_data()
+                self.chart_view._set_data("Gold")
+                
 
         btn.clicked.connect(download_clicked)
 
@@ -462,7 +613,6 @@ class MainWindow(QMainWindow):
         panel = QWidget()
         panel.setLayout(wrapper)
         return panel
-
 
     #! ---------- Settings Page ----------
     def settings_page(self):
@@ -537,23 +687,32 @@ class MainWindow(QMainWindow):
 
         #! --- Notification QLabel ---
         notif = QLabel("", frame)
-        notif.setStyleSheet("background: transparent; color: white;border: none; padding: 10px; ")
+        notif.setStyleSheet(
+            "background: transparent; color: white;border: none; padding: 10px; "
+        )
         notif.setFixedWidth(350)
         notif.setAlignment(Qt.AlignCenter)
-        notif.setVisible(True)  
+        notif.setVisible(True)
         layout.addWidget(notif, alignment=Qt.AlignCenter)
-        
+
         opacity_effect = QGraphicsOpacityEffect()
         notif.setGraphicsEffect(opacity_effect)
         opacity_anim = QPropertyAnimation(opacity_effect, b"opacity")
-        opacity_anim.setDuration(500) 
+        opacity_anim.setDuration(500)
 
         def show_notification(text, color="#22C55E"):
             notif.setText(text)
-            notif.setStyleSheet(f"background: {color}; color: white; padding: 10px; border-radius: 5px;")
+            notif.setStyleSheet(
+                f"background: {color}; color: white; padding: 10px; border-radius: 5px;"
+            )
             notif.setVisible(True)
-            
-            QTimer.singleShot(2000, lambda: notif.setStyleSheet("background: transparent; color: white;border: none; padding: 10px; "))
+
+            QTimer.singleShot(
+                2000,
+                lambda: notif.setStyleSheet(
+                    "background: transparent; color: white;border: none; padding: 10px; "
+                ),
+            )
 
         save = QPushButton("Save")
         save.setFixedWidth(120)
@@ -575,9 +734,22 @@ class MainWindow(QMainWindow):
         def save_clicked():
             empty_fields = [i for i in inputs if not i.text().strip()]
             if empty_fields:
-                show_notification("Please fill in all fields!", color="#F87171")  
-            else:
-                show_notification("Settings saved successfully!", color="#22C55E")
+                show_notification("Please fill in all fields!", color="#F87171")
+                return
+
+            file_path = "settings.csv"
+            row = [
+                inputs[0].text().strip(),
+                inputs[1].text().strip(),
+                inputs[2].text().strip(),
+                inputs[3].text().strip(),
+            ]
+
+            with open(file_path, "w", newline="", encoding="utf-8") as f:
+                data = ",".join(row)
+                f.write(encrypt_aes(data))
+
+            show_notification("Settings saved successfully!", color="#22C55E")
 
         save.clicked.connect(save_clicked)
         layout.addWidget(save, alignment=Qt.AlignHCenter)
