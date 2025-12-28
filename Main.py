@@ -46,6 +46,44 @@ def ensure_data_files():
             pass  # empty file
 
 
+#! ---------- Data ----------
+
+key = "6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"
+iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
+
+
+DATA = {
+    "Time": [],
+    "Gold": [],
+    "Coin": [],
+    "USD": [],
+    "USDT": [],
+}
+
+COLORS = {
+    "Gold": "#F97316",
+    "Coin": "#3B82F6",
+    "USD": "#6366F1",
+    "USDT": "#22C55E",
+}
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+buttons = [
+    ("Gold", COLORS["Gold"], resource_path("pics/gold.png"), False),
+    ("Coin", COLORS["Coin"], resource_path("pics/coin.png"), False),
+    ("USD", COLORS["USD"], resource_path("pics/dollar.png"), False),
+    ("USDT", COLORS["USDT"], resource_path("pics/tether.png"), False),
+]
+
+
 def encrypt_aes(text):
     cipher = AES.new(bytes.fromhex(key), AES.MODE_CBC, iv)
     encrypted = cipher.encrypt(pad(text.encode("utf-8"), AES.block_size))
@@ -76,45 +114,8 @@ def download_via_sftp(key):
     return "2"
 
 
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-
 def app_path(filename):
     return os.path.join(os.getcwd(), filename)
-
-
-#! ---------- Data ----------
-
-key = "6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"
-iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
-
-
-DATA = {
-    "Time": [],
-    "Gold": [],
-    "Coin": [],
-    "USD": [],
-    "USDT": [],
-}
-
-COLORS = {
-    "Gold": "#F97316",
-    "Coin": "#3B82F6",
-    "USD": "#6366F1",
-    "USDT": "#22C55E",
-}
-
-buttons = [
-    ("Gold", COLORS["Gold"], resource_path("pics/gold.png"), False),
-    ("Coin", COLORS["Coin"], resource_path("pics/coin.png"), False),
-    ("USD", COLORS["USD"], resource_path("pics/dollar.png"), False),
-    ("USDT", COLORS["USDT"], resource_path("pics/tether.png"), False),
-]
 
 
 def load_data():
@@ -125,10 +126,10 @@ def load_data():
             if line[0] not in DATA["Time"]:
                 DATA["Time"].append(line[0])
                 decrypted_line = decrypt_aes(line[1], key).split(",")  # ?time
-                DATA["Gold"].append(int(decrypted_line[0]))  # ?gold
-                DATA["Coin"].append(int(decrypted_line[1]))  # ?coin
-                DATA["USD"].append(int(decrypted_line[2]))  # ?usd
-                DATA["USDT"].append(int(decrypted_line[3]))  # ?usdt
+                DATA["Gold"].append(int(decrypted_line[2]))  # ?gold
+                DATA["Coin"].append(int(decrypted_line[3]))  # ?coin
+                DATA["USD"].append(int(decrypted_line[1]))  # ?usd
+                DATA["USDT"].append(int(decrypted_line[0]))  # ?usdt
 
 
 #! ---------- Card ----------
