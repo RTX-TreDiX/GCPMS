@@ -25,27 +25,33 @@ def encrypt_aes(text, key, iv):
 
 
 def decrypt_aes(enc_text, key, iv):
+    result = ""
     try:
         cipher = AES.new(bytes.fromhex(key), AES.MODE_CBC, iv)
         decrypted = unpad(cipher.decrypt(base64.b64decode(enc_text)), AES.block_size)
-        return decrypted.decode("utf-8")
+        result = decrypted.decode("utf-8")
     except Exception as e:
-        return False
+        result = False
+    return result
 
 
 def try_decrypt(key, iv):
     file_path = find_app_path("settings.csv")
+    result = ""
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read().strip()
-            if content == "":
-                return "2"
-            reader = decrypt_aes(content, key, iv)
-            if reader:
-                return reader
+            if content != "":
+                reader = decrypt_aes(content, key, iv)
+                if reader:
+                    result = reader
+                else:
+                    result = "1"
             else:
-                return "1"
-    return "2"
+                result = "2"
+    else:
+        result = "2"
+    return result
 
 
 def load_data(DATA, key, iv):
@@ -62,18 +68,20 @@ def load_data(DATA, key, iv):
                 DATA["USDT"].append(int(decrypted_line[0]))  # ?usdt
 
 
-def download_via_sftp(result):
+def download_via_sftp(enter):
+    result = ""
     try:
-        row = result.split(",")
+        row = enter.split(",")
         transport = paramiko.Transport((row[0], int(row[1])))
         transport.connect(username=row[2], password=row[3])
         sftp = paramiko.SFTPClient.from_transport(transport)
         sftp.get("/home/debian/Prices.csv", find_app_path("Prices.csv"))
         sftp.close()
         transport.close()
-        return True, 1
+        result = (True, 1)
     except Exception as e:
-        return False, e
+        result = (False, e)
+    return result
 
 
 def save_settings(settings, key, iv):
