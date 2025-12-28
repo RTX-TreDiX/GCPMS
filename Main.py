@@ -28,9 +28,10 @@ from PySide6.QtCore import (
     Signal,
     QEasingCurve,
     QDateTime,
-    QTimer,
+    QTimer, 
+    QLocale
 )
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis ,QCategoryAxis
 
 #! ---------- Data ----------
 key = "6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"
@@ -117,6 +118,7 @@ class AnimatedChart(QChartView):
 
     def _set_data(self, key):
         self.chart.removeAllSeries()
+        self.chart.setLocale(QLocale(QLocale.English))
         series = QLineSeries()
 
         series.setPen(
@@ -137,11 +139,23 @@ class AnimatedChart(QChartView):
         axis_x.setTitleText("Time")
         axis_x.setLabelsColor(QColor("#55585E"))
         axis_x.setGridLineColor(QColor("#EDEDF1"))
-
-        axis_y = QValueAxis()
-        axis_y.setLabelFormat("%.1f")
-        axis_y.setGridLineColor(QColor("#EDEDF1"))
+        
+        # locale = QLocale(QLocale.English)
+        
+        axis_y = QCategoryAxis()
+        axis_y.setGridLineVisible(True)
         axis_y.setLabelsColor(QColor("#55585E"))
+        axis_y.setGridLineColor(QColor("#EDEDF1"))
+        
+        min_y = int(min(data))
+        max_y = int(max(data))
+
+        steps = 6
+        step = (max_y - min_y) // steps or 1
+
+        for v in range(min_y, max_y + 1, step):
+            axis_y.append(f"{v:,}", v)
+
 
         for axis in self.chart.axes():
             self.chart.removeAxis(axis)
