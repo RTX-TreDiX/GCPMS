@@ -1,6 +1,8 @@
 import sys
 import os, paramiko
 from Crypto.Cipher import AES
+import backend
+
 from Crypto.Util.Padding import pad, unpad
 import base64
 from PySide6.QtWidgets import (
@@ -30,24 +32,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis
 
-
-def ensure_data_files():
-    prices_path = os.path.join(os.getcwd(), "Prices.csv")
-    settings_path = os.path.join(os.getcwd(), "settings.csv")
-
-    # Prices.csv
-    if not os.path.exists(prices_path):
-        with open(prices_path, "w", encoding="utf-8") as f:
-            pass  # empty file
-
-    # settings.csv
-    if not os.path.exists(settings_path):
-        with open(settings_path, "w", encoding="utf-8") as f:
-            pass  # empty file
-
-
 #! ---------- Data ----------
-
 key = "6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"
 iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
 
@@ -68,68 +53,13 @@ COLORS = {
 }
 
 
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-
 buttons = [
-    ("Gold", COLORS["Gold"], resource_path("pics/gold.png"), False),
-    ("Coin", COLORS["Coin"], resource_path("pics/coin.png"), False),
-    ("USD", COLORS["USD"], resource_path("pics/dollar.png"), False),
-    ("USDT", COLORS["USDT"], resource_path("pics/tether.png"), False),
+    ("Gold", COLORS["Gold"], backend.resource_path("pics/gold.png")),
+    ("Coin", COLORS["Coin"], backend.resource_path("pics/coin.png")),
+    ("USD", COLORS["USD"], backend.resource_path("pics/dollar.png")),
+    ("USDT", COLORS["USDT"], backend.resource_path("pics/tether.png")),
 ]
 
-
-def encrypt_aes(text):
-    cipher = AES.new(bytes.fromhex(key), AES.MODE_CBC, iv)
-    encrypted = cipher.encrypt(pad(text.encode("utf-8"), AES.block_size))
-    return base64.b64encode(encrypted).decode("utf-8")
-
-
-def decrypt_aes(enc_text, key):
-    try:
-        cipher = AES.new(bytes.fromhex(key), AES.MODE_CBC, iv)
-        decrypted = unpad(cipher.decrypt(base64.b64decode(enc_text)), AES.block_size)
-        return decrypted.decode("utf-8")
-    except Exception as e:
-        return False
-
-
-def download_via_sftp(key):
-    file_path = app_path("settings.csv")
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if content == "":
-                return "2"
-            reader = decrypt_aes(content, key)
-            if reader:
-                return reader
-            else:
-                return "1"
-    return "2"
-
-
-def app_path(filename):
-    return os.path.join(os.getcwd(), filename)
-
-
-def load_data():
-    with open(app_path("Prices.csv"), "r", encoding="utf-8") as f:
-        encrypted_data = f.readlines()
-        for line in encrypted_data:
-            line = line.strip().split(",")
-            if line[0] not in DATA["Time"]:
-                DATA["Time"].append(line[0])
-                decrypted_line = decrypt_aes(line[1], key).split(",")  # ?time
-                DATA["Gold"].append(int(decrypted_line[2]))  # ?gold
-                DATA["Coin"].append(int(decrypted_line[3]))  # ?coin
-                DATA["USD"].append(int(decrypted_line[1]))  # ?usd
-                DATA["USDT"].append(int(decrypted_line[0]))  # ?usdt
 
 
 #! ---------- Card ----------
@@ -446,14 +376,7 @@ class MainWindow(QMainWindow):
 
         group = QButtonGroup(self)
         group.setExclusive(True)
-
-        buttons = [
-            ("Gold", COLORS["Gold"], resource_path("pics/gold.png")),
-            ("Coin", COLORS["Coin"], resource_path("pics/coin.png")),
-            ("USD", COLORS["USD"], resource_path("pics/dollar.png")),
-            ("USDT", COLORS["USDT"], resource_path("pics/tether.png")),
-        ]
-
+        
         def get_checked_coin():
             for btn in group.buttons():
                 if btn.isChecked():
@@ -471,7 +394,7 @@ class MainWindow(QMainWindow):
         group.buttons()[0].setChecked(True)
 
         update_card = Card()
-        # update_card.setFixedHeight(180)
+
         up_layout = QVBoxLayout(update_card)
         up_layout.setContentsMargins(20, 16, 20, 20)
         up_layout.setSpacing(12)
@@ -483,9 +406,9 @@ class MainWindow(QMainWindow):
         label.setAlignment(Qt.AlignCenter)
         up_layout.addWidget(label)
 
-        key = QLineEdit()
-        key.setPlaceholderText("Enter Key")
-        key.setStyleSheet(
+        key_edit = QLineEdit()
+        key_edit.setPlaceholderText("Enter Key")
+        key_edit.setStyleSheet(
             """
             color: #374151;
             padding: 10px;
@@ -494,7 +417,7 @@ class MainWindow(QMainWindow):
         """
         )
 
-        up_layout.addWidget(key)
+        up_layout.addWidget(key_edit)
 
         #! --- Notification QLabel  ---
         notif = QLabel("", update_card)
@@ -532,12 +455,12 @@ class MainWindow(QMainWindow):
         up_layout.addWidget(btn)
 
         def download_clicked():
-            if not key.text().strip():
+            if not key_edit.text().strip():
                 show_notification("Please enter Key!", color="#F87171")
                 return
 
             confirm = QMessageBox(btn)
-            confirm.setWindowIcon(QIcon(resource_path("pics/ask.png")))
+            confirm.setWindowIcon(QIcon(backend.resource_path("pics/ask.png")))
             confirm.setWindowTitle("Confirm Download")
             confirm.setText("Do you want to download the data using this key?")
             confirm.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -558,13 +481,13 @@ class MainWindow(QMainWindow):
             reply = confirm.exec()
 
             if reply == QMessageBox.Yes:
-                result = download_via_sftp(key.text().strip())
+                result = backend.try_decrypt(key_edit.text().strip(),iv)
 
                 # ❌ Wrong Key
                 if result == "1":
                     error_msg = QMessageBox(btn)
                     error_msg.setWindowIcon(
-                        QIcon(resource_path("pics/exclamation.png"))
+                        QIcon(backend.resource_path("pics/exclamation.png"))
                     )
                     error_msg.setStyleSheet(
                         """
@@ -602,20 +525,14 @@ class MainWindow(QMainWindow):
                         "Connection settings not found. Please configure settings first."
                     )
                     error_msg.setIcon(QMessageBox.Warning)
-                    error_msg.setWindowIcon(QIcon(resource_path("pics/warning.png")))
+                    error_msg.setWindowIcon(QIcon(backend.resource_path("pics/warning.png")))
                     error_msg.setStandardButtons(QMessageBox.Ok)
                     error_msg.exec()
                     return
 
-                row = result.split(",")
-                try:
-                    transport = paramiko.Transport((row[0], int(row[1])))
-                    transport.connect(username=row[2], password=row[3])
-
-                    sftp = paramiko.SFTPClient.from_transport(transport)
-                    sftp.get("/home/debian/Prices.csv", app_path("Prices.csv"))
-
-                except Exception as e:
+                # row = result.split(",")
+                sftp_res =  backend.download_via_sftp(result)
+                if sftp_res[0]==False :
                     sftp_error = QMessageBox(btn)
                     sftp_error.setStyleSheet(
                         """
@@ -629,23 +546,17 @@ class MainWindow(QMainWindow):
                             """
                     )
                     sftp_error.setWindowTitle("SFTP connection error")
-                    sftp_error.setText(e)
+                    sftp_error.setText(sftp_res[1])
                     sftp_error.setIcon(QMessageBox.Critical)
                     sftp_error.setWindowIcon(
-                        QIcon(resource_path("pics/exclamation.png"))
+                        QIcon(backend.resource_path("pics/exclamation.png"))
                     )
                     sftp_error.setStandardButtons(QMessageBox.Ok)
                     sftp_error.exec()
-
-                finally:
-                    try:
-                        sftp.close()
-                        transport.close()
-                    except:
-                        return
+                    return
 
                 show_notification("Downloaded successfully!", color="#22C55E")
-                load_data()
+                backend.load_data(DATA,key,iv)
 
                 self.chart_view._set_data(get_checked_coin())
 
@@ -782,19 +693,15 @@ class MainWindow(QMainWindow):
                 show_notification("Please fill in all fields!", color="#F87171")
                 return
 
-            file_path = app_path("settings.csv")
+
             row = [
                 inputs[0].text().strip(),
                 inputs[1].text().strip(),
                 inputs[2].text().strip(),
                 inputs[3].text().strip(),
             ]
-
-            with open(file_path, "w", newline="", encoding="utf-8") as f:
-                data = ",".join(row)
-                f.write(encrypt_aes(data))
-
-            show_notification("Settings saved successfully!", color="#22C55E")
+            backend.save_settings(row,key,iv)
+            show_notification("Settings saved successfully!", color="#22C55E") 
 
         save.clicked.connect(save_clicked)
         layout.addWidget(save, alignment=Qt.AlignHCenter)
@@ -815,8 +722,8 @@ class MainWindow(QMainWindow):
 
 #! ---------- Run ----------
 if __name__ == "__main__":
-    ensure_data_files()
-    load_data()
+    backend.ensure_data_files()
+    backend.load_data(DATA,key,iv)
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
