@@ -8,7 +8,7 @@ import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from requests.exceptions import RequestException
-
+import pytz
 
 key = bytes.fromhex("6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79")
 iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
@@ -78,11 +78,13 @@ def write_to_csv(file_path, row):
 
 if __name__ == "__main__":
     FILE_NAME = "Prices.csv"
+    iran_tz = pytz.timezone("Asia/Tehran")
+
 
     try:
         while True:
             try:
-                now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                now = datetime.datetime.now(iran_tz).strftime("%Y-%m-%d %H:%M:%S")
 
                 tether = get_tether_price()
                 usd = get_usd_price()
@@ -99,6 +101,6 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"[{datetime.datetime.now()}] Error: {e}")
 
-            time.sleep(20)
+            time.sleep(60)
     except KeyboardInterrupt:
         print("\nProgram stopped by user")
