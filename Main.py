@@ -29,7 +29,6 @@ from PySide6.QtCore import (
     QEasingCurve,
     QDateTime,
     QTimer, 
-    QLocale
 )
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis ,QCategoryAxis
 
@@ -118,7 +117,6 @@ class AnimatedChart(QChartView):
 
     def _set_data(self, key):
         self.chart.removeAllSeries()
-        self.chart.setLocale(QLocale(QLocale.English))
         series = QLineSeries()
 
         series.setPen(
@@ -140,21 +138,22 @@ class AnimatedChart(QChartView):
         axis_x.setLabelsColor(QColor("#55585E"))
         axis_x.setGridLineColor(QColor("#EDEDF1"))
         
-        # locale = QLocale(QLocale.English)
         
         axis_y = QCategoryAxis()
         axis_y.setGridLineVisible(True)
         axis_y.setLabelsColor(QColor("#55585E"))
         axis_y.setGridLineColor(QColor("#EDEDF1"))
-        
-        min_y = int(min(data))
-        max_y = int(max(data))
+        if data:    
+            min_y = int(min(data))
+            max_y = int(max(data))
 
-        steps = 6
-        step = (max_y - min_y) // steps or 1
+            steps = 6
+            step = (max_y - min_y) // steps or 1
 
-        for v in range(min_y, max_y + 1, step):
-            axis_y.append(f"{v:,}", v)
+            for v in range(min_y, max_y + 1, step):
+                axis_y.append(f"{v:,}", v)
+        else:
+            axis_y.append("0",0)
 
 
         for axis in self.chart.axes():

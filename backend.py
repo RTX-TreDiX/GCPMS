@@ -89,9 +89,9 @@ def ensure_data_files():
     # Prices.csv
     if not os.path.exists(prices_path):
         with open(prices_path, "w", encoding="utf-8") as f:
-            pass  # empty file
+            pass
 
     # settings.csv
     if not os.path.exists(settings_path):
         with open(settings_path, "w", encoding="utf-8") as f:
-            pass  # empty file
+            pass
