@@ -55,10 +55,10 @@ COLORS = {
 
 
 buttons = [
-    ("Gold", COLORS["Gold"], backend.resource_path("pics/gold.png")),
-    ("Coin", COLORS["Coin"], backend.resource_path("pics/coin.png")),
-    ("USD", COLORS["USD"], backend.resource_path("pics/dollar.png")),
-    ("USDT", COLORS["USDT"], backend.resource_path("pics/tether.png")),
+    ("Gold", COLORS["Gold"], backend.find_resource_path("pics/gold.png")),
+    ("Coin", COLORS["Coin"], backend.find_resource_path("pics/coin.png")),
+    ("USD", COLORS["USD"], backend.find_resource_path("pics/dollar.png")),
+    ("USDT", COLORS["USDT"], backend.find_resource_path("pics/tether.png")),
 ]
 
 
@@ -474,7 +474,7 @@ class MainWindow(QMainWindow):
                 return
 
             confirm = QMessageBox(btn)
-            confirm.setWindowIcon(QIcon(backend.resource_path("pics/ask.png")))
+            confirm.setWindowIcon(QIcon(backend.find_resource_path("pics/ask.png")))
             confirm.setWindowTitle("Confirm Download")
             confirm.setText("Do you want to download the data using this key?")
             confirm.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -501,7 +501,7 @@ class MainWindow(QMainWindow):
                 if result == "1":
                     error_msg = QMessageBox(btn)
                     error_msg.setWindowIcon(
-                        QIcon(backend.resource_path("pics/exclamation.png"))
+                        QIcon(backend.find_resource_path("pics/exclamation.png"))
                     )
                     error_msg.setStyleSheet(
                         """
@@ -539,7 +539,7 @@ class MainWindow(QMainWindow):
                         "Connection settings not found. Please configure settings first."
                     )
                     error_msg.setIcon(QMessageBox.Warning)
-                    error_msg.setWindowIcon(QIcon(backend.resource_path("pics/warning.png")))
+                    error_msg.setWindowIcon(QIcon(backend.find_resource_path("pics/warning.png")))
                     error_msg.setStandardButtons(QMessageBox.Ok)
                     error_msg.exec()
                     return
@@ -563,7 +563,7 @@ class MainWindow(QMainWindow):
                     sftp_error.setText(sftp_res[1])
                     sftp_error.setIcon(QMessageBox.Critical)
                     sftp_error.setWindowIcon(
-                        QIcon(backend.resource_path("pics/exclamation.png"))
+                        QIcon(backend.find_resource_path("pics/exclamation.png"))
                     )
                     sftp_error.setStandardButtons(QMessageBox.Ok)
                     sftp_error.exec()
