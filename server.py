@@ -11,6 +11,7 @@ import json
 import sys
 import re
 import hashlib
+import secrets
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
@@ -37,23 +38,35 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s | %(levelname)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler()
-    ],
+    handlers=[logging.FileHandler(LOG_FILE, encoding="utf-8"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger("TGJU-Logger")
 
 # ===================== VALIDATION =====================
 
-HEX_KEY_RE = re.compile(r"^[0-9a-f]{64}$")   # 32 bytes
-HEX_IV_RE  = re.compile(r"^[0-9a-f]{32}$")   # 16 bytes
+HEX_KEY_RE = re.compile(r"^[0-9a-f]{64}$")  # 32 bytes
+HEX_IV_RE = re.compile(r"^[0-9a-f]{32}$")  # 16 bytes
+
+# ===================== CONFIG BOOTSTRAP =====================
+
+
+def create_default_config(config_path):
+    key_hex = secrets.token_bytes(32).hex()
+    iv_hex = secrets.token_bytes(16).hex()
+
+    data = {"key": key_hex, "iv": iv_hex}
+
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+    logger.warning("config.json not found. Default AES key/IV generated.")
+
 
 def load_and_validate_aes(config_path):
     if not os.path.isfile(config_path):
-        logger.critical(f"Config file not found: {config_path}")
-        sys.exit(1)
+        logger.warning("Config file missing. Creating default config.json")
+        create_default_config(config_path)
 
     try:
         with open(config_path, "r", encoding="utf-8") as f:
@@ -66,14 +79,10 @@ def load_and_validate_aes(config_path):
             raise ValueError("key and iv must be strings")
 
         if not HEX_KEY_RE.fullmatch(key_hex):
-            raise ValueError(
-                "Invalid key: must be 64 hex chars (0-9, a-f, lowercase)"
-            )
+            raise ValueError("Invalid key format (must be 64 hex lowercase chars)")
 
         if not HEX_IV_RE.fullmatch(iv_hex):
-            raise ValueError(
-                "Invalid iv: must be 32 hex chars (0-9, a-f, lowercase)"
-            )
+            raise ValueError("Invalid iv format (must be 32 hex lowercase chars)")
 
         key = bytes.fromhex(key_hex)
         iv = bytes.fromhex(iv_hex)
@@ -85,10 +94,13 @@ def load_and_validate_aes(config_path):
         logger.critical(f"AES config validation failed: {e}")
         sys.exit(1)
 
-# ===================== CHECK & RESET CSV =====================
+
+# ===================== CSV RESET ON KEY CHANGE =====================
+
 
 def get_key_iv_hash(key: bytes, iv: bytes) -> str:
     return hashlib.sha256(key + iv).hexdigest()
+
 
 def check_reset_csv(key: bytes, iv: bytes):
     current_hash = get_key_iv_hash(key, iv)
@@ -99,76 +111,82 @@ def check_reset_csv(key: bytes, iv: bytes):
             previous_hash = f.read().strip()
 
     if previous_hash != current_hash:
-        logger.warning("AES key/IV changed! Clearing Prices.csv to avoid decryption issues.")
+        logger.warning("AES key/IV changed → clearing Prices.csv")
+
         if os.path.isfile(FILE_NAME):
             os.remove(FILE_NAME)
-            logger.info(f"{FILE_NAME} removed.")
+            logger.info("Prices.csv removed")
+
         with open(HASH_FILE, "w") as f:
             f.write(current_hash)
+
 
 # ===================== LOAD AES =====================
 
 key, iv = load_and_validate_aes(CONFIG_FILE)
 check_reset_csv(key, iv)
 
-# ===================== FUNCTIONS =====================
+# ===================== PRICE FUNCTIONS =====================
+
 
 def fetch_price(item_id, retries=3):
     for attempt in range(1, retries + 1):
         try:
             logger.info(f"Fetching {item_id} (attempt {attempt})")
+
             response = requests.get(URL, headers=HEADERS, timeout=10)
-            logger.debug(f"{item_id} HTTP status: {response.status_code}")
+            logger.debug(f"{item_id} HTTP {response.status_code}")
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, "html.parser")
             item = soup.find("li", id=item_id)
 
-            if item is None:
-                raise RuntimeError(f"Element {item_id} not found")
+            if not item:
+                raise RuntimeError("Item not found in HTML")
 
             price_text = item.find("span", class_="info-price").text.strip()
-            price = int(price_text.replace(",", ""))
-
-            logger.info(f"{item_id} price fetched: {price}")
-            return price
+            return int(price_text.replace(",", ""))
 
         except (RequestException, RuntimeError, ValueError) as e:
-            logger.warning(f"{item_id} attempt {attempt} failed: {e}")
+            logger.warning(f"{item_id} failed: {e}")
             time.sleep(5)
 
-    logger.error(f"{item_id} failed after {retries} retries")
-    raise RuntimeError(f"Failed to fetch {item_id}")
+    raise RuntimeError(f"{item_id} failed after retries")
+
 
 def get_tether_price():
     return fetch_price("l-crypto-tether-irr")
 
+
 def get_usd_price():
     return fetch_price("l-price_dollar_rl")
+
 
 def get_gold_price():
     return fetch_price("l-geram18")
 
+
 def get_coin_price():
     return fetch_price("l-sekee")
 
+
+# ===================== ENCRYPT & SAVE =====================
+
+
 def encrypt_data(data: str) -> str:
-    logger.debug("Encrypting data")
     cipher = AES.new(key, AES.MODE_CBC, iv)
     encrypted = cipher.encrypt(pad(data.encode(), AES.block_size))
-    encoded = base64.b64encode(encrypted).decode()
-    logger.debug("Encryption complete")
-    return encoded
+    return base64.b64encode(encrypted).decode()
+
 
 def write_to_csv(file_path, row):
     try:
-        with open(file_path, mode="a", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(row)
+        with open(file_path, "a", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(row)
             logger.info("Row written to CSV")
-
     except Exception as e:
         logger.error(f"CSV write error: {e}", exc_info=True)
+
 
 # ===================== MAIN =====================
 
@@ -186,14 +204,13 @@ if __name__ == "__main__":
                 coin = get_coin_price()
 
                 raw_data = f"{tether},{usd},{gold},{coin}"
-                encrypted_data = encrypt_data(raw_data)
+                encrypted = encrypt_data(raw_data)
 
-                write_to_csv(FILE_NAME, [now, encrypted_data])
-
-                logger.info(f"Logged data successfully: {raw_data}")
+                write_to_csv(FILE_NAME, [now, encrypted])
+                logger.info(f"Logged: {raw_data}")
 
             except Exception as e:
-                logger.error(f"Main loop error: {e}", exc_info=True)
+                logger.error(f"Loop error: {e}", exc_info=True)
 
             time.sleep(60)
 
