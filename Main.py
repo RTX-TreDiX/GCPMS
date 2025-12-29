@@ -2,7 +2,6 @@ import sys
 import os, paramiko
 from Crypto.Cipher import AES
 import backend
-
 from Crypto.Util.Padding import pad, unpad
 import base64
 from PySide6.QtWidgets import (
@@ -20,8 +19,9 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QStackedWidget,
     QMessageBox,
+    QToolTip
 )
-from PySide6.QtGui import QColor, QPainter, QPen, QPixmap, QIcon
+from PySide6.QtGui import QColor, QPainter, QPen, QPixmap, QIcon ,QCursor
 from PySide6.QtCore import (
     Qt,
     QPropertyAnimation,
@@ -30,11 +30,12 @@ from PySide6.QtCore import (
     QDateTime,
     QTimer, 
 )
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis ,QCategoryAxis
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis ,QCategoryAxis , QScatterSeries
 
 #! ---------- Data ----------
-key = "6acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"
-iv = bytes.fromhex("a96808845430d3e213c059a6c9979f39")
+key = "7acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"
+iv = bytes.fromhex("b96808845430d3e213c059a6c9979f39")
+
 
 
 DATA = {
@@ -84,85 +85,126 @@ class Card(QFrame):
 
 
 #! ---------- Animated Chart ----------
+
 class AnimatedChart(QChartView):
     chartChanged = Signal(str)
 
     def __init__(self):
         super().__init__()
+
         self.setRenderHint(QPainter.Antialiasing)
         self.setFocusPolicy(Qt.NoFocus)
-        self.setInteractive(False)
 
-        self.setStyleSheet(
-            """
+        self.setMouseTracking(True)
+
+        self.setStyleSheet("""
             QChartView {
-                
                 background: transparent;
                 border: none;
             }
-        """
-        )
+            QToolTip {
+                background-color: white;
+                border: 1px solid #E5E7EB;
+                padding: 6px;
+                border-radius: 6px;
+                color: #111827;
+                font-weight: 600;
+            }
+        """)
 
         self.chart = QChart()
         self.chart.legend().hide()
+        self.chart.setBackgroundVisible(False)
         self.setChart(self.chart)
-        self.next_key = None
+
         self._set_data("Gold")
 
+    # -----------------------------
     def update_chart(self, key):
         self._set_data(key)
         self.chartChanged.emit(key)
 
-        self.next_key = key
-
+    # -----------------------------
     def _set_data(self, key):
         self.chart.removeAllSeries()
-        series = QLineSeries()
 
-        series.setPen(
+        line = QLineSeries()
+        line.setPen(
             QPen(QColor(COLORS.get(key, "#9CA3AF")), 3, Qt.SolidLine, Qt.RoundCap)
         )
+
+        points = QScatterSeries()
+        points.setMarkerSize(10)
+        points.setColor(QColor(0, 0, 0, 0))      # کاملاً نامرئی
+        points.setBorderColor(QColor(0, 0, 0, 0))
 
         data = DATA[key]
         times = DATA["Time"]
 
+        self.tooltip_data = []
+
         for t, v in zip(times, data):
             dt = QDateTime.fromString(t, "yyyy-MM-dd HH:mm:ss")
-            series.append(dt.toMSecsSinceEpoch(), v)
+            x = dt.toMSecsSinceEpoch()
 
-        self.chart.addSeries(series)
+            line.append(x, v)
+            points.append(x, v)
 
+            self.tooltip_data.append(
+                f"{dt.toString('MM-dd HH:mm')}\nValue: {v}"
+            )
+
+        points.hovered.connect(self._show_tooltip)
+
+        self.chart.addSeries(line)
+        self.chart.addSeries(points)
+
+        # -------- Axis X --------
         axis_x = QDateTimeAxis()
         axis_x.setFormat("MM-dd HH:mm")
-        axis_x.setTitleText("Time")
         axis_x.setLabelsColor(QColor("#55585E"))
         axis_x.setGridLineColor(QColor("#EDEDF1"))
-        
-        
+
+        # -------- Axis Y --------
         axis_y = QCategoryAxis()
-        axis_y.setGridLineVisible(True)
         axis_y.setLabelsColor(QColor("#55585E"))
         axis_y.setGridLineColor(QColor("#EDEDF1"))
-        if data:    
+
+        if data:
             min_y = int(min(data))
             max_y = int(max(data))
-
-            steps = 6
-            step = (max_y - min_y) // steps or 1
+            step = max((max_y - min_y) // 6, 1)
 
             for v in range(min_y, max_y + 1, step):
-                axis_y.append(f"{v:,}", v)
+                axis_y.append(str(v), v)
         else:
-            axis_y.append("0",0)
+            axis_y.append("0", 0)
 
-
-        for axis in self.chart.axes():
-            self.chart.removeAxis(axis)
+        for a in self.chart.axes():
+            self.chart.removeAxis(a)
 
         self.chart.addAxis(axis_x, Qt.AlignBottom)
         self.chart.addAxis(axis_y, Qt.AlignLeft)
-        series.attachAxis(axis_x)
-        series.attachAxis(axis_y)
+
+        line.attachAxis(axis_x)
+        line.attachAxis(axis_y)
+        points.attachAxis(axis_x)
+        points.attachAxis(axis_y)
+
+    # -----------------------------
+    def _show_tooltip(self, point, state):
+        if state:
+            index = self.sender().points().index(point)
+            if 0 <= index < len(self.tooltip_data):
+                QToolTip.showText(
+                    QCursor.pos(),
+                    self.tooltip_data[index],
+                    self,
+                    self.rect(),
+                    3000
+                )
+        else:
+            QToolTip.hideText()
 
 
 #! ---------- Coin Button ----------
@@ -391,10 +433,14 @@ class MainWindow(QMainWindow):
         group.setExclusive(True)
         
         def get_checked_coin():
+            result = ''
             for btn in group.buttons():
                 if btn.isChecked():
-                    return btn.text()
-            return None
+                    result = btn.text()
+                    break
+            else:
+                result= None
+            return result
 
         for name, color, path in buttons:
             btn_widget = CoinButton(name, color, path)
@@ -431,6 +477,18 @@ class MainWindow(QMainWindow):
         )
 
         up_layout.addWidget(key_edit)
+        iv_edit = QLineEdit()
+        iv_edit.setPlaceholderText("Enter IV")
+        iv_edit.setStyleSheet(
+            """
+            color: #374151;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #E5E7EB;
+        """
+        )
+
+        up_layout.addWidget(iv_edit)
 
         #! --- Notification QLabel  ---
         notif = QLabel("", update_card)
@@ -468,8 +526,8 @@ class MainWindow(QMainWindow):
         up_layout.addWidget(btn)
 
         def download_clicked():
-            if not key_edit.text().strip():
-                show_notification("Please enter Key!", color="#F87171")
+            if not key_edit.text().strip() and not iv_edit.text().strip():
+                show_notification("Please enter Key and IV!", color="#F87171")
                 return
 
             confirm = QMessageBox(btn)
@@ -494,10 +552,10 @@ class MainWindow(QMainWindow):
             reply = confirm.exec()
 
             if reply == QMessageBox.Yes:
-                result = backend.try_decrypt(key_edit.text().strip(),iv)
+                result = backend.try_decrypt(key_edit.text().strip(), iv_edit.text().strip())
 
                 # ❌ Wrong Key
-                if result == "1":
+                if result[0] == False and result[1] == 3:
                     error_msg = QMessageBox(btn)
                     error_msg.setWindowIcon(
                         QIcon(backend.find_resource_path("pics/exclamation.png"))
@@ -514,13 +572,13 @@ class MainWindow(QMainWindow):
                             """
                     )
 
-                    error_msg.setWindowTitle("Wrong Key")
-                    error_msg.setText("The provided key is incorrect.")
+                    error_msg.setWindowTitle("Wrong Key or IV")
+                    error_msg.setText("The provided key or IV is incorrect.")
                     error_msg.setIcon(QMessageBox.Critical)
                     error_msg.setStandardButtons(QMessageBox.Ok)
                     error_msg.exec()
                     return
-                elif result == "2":
+                elif result[0] == False and result[1] == 1:
                     error_msg = QMessageBox(btn)
                     error_msg.setStyleSheet(
                         """
@@ -542,12 +600,10 @@ class MainWindow(QMainWindow):
                     error_msg.setStandardButtons(QMessageBox.Ok)
                     error_msg.exec()
                     return
-
-                # row = result.split(",")
-                sftp_res =  backend.download_via_sftp(result)
-                if sftp_res[0]==False :
-                    sftp_error = QMessageBox(btn)
-                    sftp_error.setStyleSheet(
+                
+                elif result[0] == False and result[1] == 2:
+                    connection_error_msg = QMessageBox(btn)
+                    connection_error_msg.setStyleSheet(
                         """
                                 QMessageBox QLabel {
                                     color: #111827;
@@ -558,20 +614,22 @@ class MainWindow(QMainWindow):
                                 }
                             """
                     )
-                    sftp_error.setWindowTitle("SFTP connection error")
-                    sftp_error.setText(sftp_res[1])
-                    sftp_error.setIcon(QMessageBox.Critical)
-                    sftp_error.setWindowIcon(
-                        QIcon(backend.find_resource_path("pics/exclamation.png"))
+                    connection_error_msg.setWindowTitle("Connection Error")
+                    connection_error_msg.setText(
+                        "Could not connect to the SFTP server. Please check your connection settings."
                     )
-                    sftp_error.setStandardButtons(QMessageBox.Ok)
-                    sftp_error.exec()
+                    connection_error_msg.setIcon(QMessageBox.Warning)
+                    connection_error_msg.setWindowIcon(QIcon(backend.find_resource_path("pics/warning.png")))
+                    connection_error_msg.setStandardButtons(QMessageBox.Ok)
+                    connection_error_msg.exec()
                     return
 
-                show_notification("Downloaded successfully!", color="#22C55E")
-                backend.load_data(DATA,key,iv)
+                elif result[0]==True :
 
-                self.chart_view._set_data(get_checked_coin())
+                    show_notification("Downloaded successfully!", color="#22C55E")
+                    backend.load_data(DATA,key_edit.text().strip(),iv_edit.text().strip())
+
+                    self.chart_view._set_data(get_checked_coin())
 
         btn.clicked.connect(download_clicked)
 
@@ -606,6 +664,7 @@ class MainWindow(QMainWindow):
             )
 
             edit = QLineEdit()
+            
             edit.setFixedWidth(350)
             edit.setPlaceholderText(placeholder)
             edit.setStyleSheet(
@@ -621,10 +680,16 @@ class MainWindow(QMainWindow):
 
             inputs.append(edit)
             return box
-
+        
         layout.addLayout(input_row("<b>IP</b>", "127.0.0.1"))
         layout.addLayout(input_row("<b>SFTP Port</b>", "22"))
         layout.addLayout(input_row("<b>Username</b>", "Username"))
+        
+        loaded_setting = backend.load_local_settings()
+        if loaded_setting:
+            inputs[0].setText( loaded_setting[0]) 
+            inputs[1].setText(loaded_setting[1])
+
 
         def password_row(label_text, placeholder):
             box = QVBoxLayout()
@@ -736,7 +801,9 @@ class MainWindow(QMainWindow):
 #! ---------- Run ----------
 if __name__ == "__main__":
     backend.ensure_data_files()
-    backend.load_data(DATA,key,iv)
+    settings = backend.load_local_settings()
+    if len(settings) > 4:
+        backend.load_data(DATA,settings[4],settings[5])
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

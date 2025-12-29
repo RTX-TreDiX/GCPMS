@@ -1,0 +1,180 @@
+2025-12-29 15:03:53 | CRITICAL | Config file not found: config.json
+2025-12-29 15:04:35 | INFO | AES key and IV validated successfully
+2025-12-29 15:04:35 | INFO | TGJU price logger started
+2025-12-29 15:04:35 | INFO | Fetching l-crypto-tether-irr (attempt 1)
+2025-12-29 15:04:35 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:04:36 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:04:37 | DEBUG | l-crypto-tether-irr HTTP status: 200
+2025-12-29 15:04:37 | INFO | l-crypto-tether-irr price fetched: 1393790
+2025-12-29 15:04:37 | INFO | Fetching l-price_dollar_rl (attempt 1)
+2025-12-29 15:04:37 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:04:44 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:04:45 | DEBUG | l-price_dollar_rl HTTP status: 200
+2025-12-29 15:04:45 | INFO | l-price_dollar_rl price fetched: 1390400
+2025-12-29 15:04:45 | INFO | Fetching l-geram18 (attempt 1)
+2025-12-29 15:04:45 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:04:51 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:04:53 | DEBUG | l-geram18 HTTP status: 200
+2025-12-29 15:04:53 | INFO | l-geram18 price fetched: 151191000
+2025-12-29 15:04:53 | INFO | Fetching l-sekee (attempt 1)
+2025-12-29 15:04:53 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:04:54 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:04:55 | DEBUG | l-sekee HTTP status: 200
+2025-12-29 15:04:55 | INFO | l-sekee price fetched: 1575050000
+2025-12-29 15:04:55 | DEBUG | Encrypting data
+2025-12-29 15:04:55 | DEBUG | Encryption complete
+2025-12-29 15:04:55 | INFO | Row written to CSV
+2025-12-29 15:04:55 | INFO | Logged data successfully: 1393790,1390400,151191000,1575050000
+2025-12-29 15:05:22 | WARNING | Program stopped by user
+2025-12-29 15:08:07 | INFO | AES key and IV validated successfully
+2025-12-29 15:08:07 | WARNING | AES key/IV changed! Clearing Prices.csv to avoid decryption issues.
+2025-12-29 15:08:07 | INFO | Prices.csv removed.
+2025-12-29 15:08:07 | INFO | TGJU price logger started
+2025-12-29 15:08:07 | INFO | Fetching l-crypto-tether-irr (attempt 1)
+2025-12-29 15:08:07 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:08:17 | WARNING | l-crypto-tether-irr attempt 1 failed: HTTPSConnectionPool(host='www.tgju.org', port=443): Read timed out. (read timeout=10)
+2025-12-29 15:08:22 | INFO | Fetching l-crypto-tether-irr (attempt 2)
+2025-12-29 15:08:22 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:08:25 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:08:25 | DEBUG | l-crypto-tether-irr HTTP status: 200
+2025-12-29 15:08:25 | INFO | l-crypto-tether-irr price fetched: 1393790
+2025-12-29 15:08:25 | INFO | Fetching l-price_dollar_rl (attempt 1)
+2025-12-29 15:08:25 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:08:36 | WARNING | l-price_dollar_rl attempt 1 failed: HTTPSConnectionPool(host='www.tgju.org', port=443): Read timed out. (read timeout=10)
+2025-12-29 15:08:41 | INFO | Fetching l-price_dollar_rl (attempt 2)
+2025-12-29 15:08:41 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:08:48 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:08:48 | DEBUG | l-price_dollar_rl HTTP status: 200
+2025-12-29 15:08:49 | INFO | l-price_dollar_rl price fetched: 1390400
+2025-12-29 15:08:49 | INFO | Fetching l-geram18 (attempt 1)
+2025-12-29 15:08:49 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:08:50 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:08:51 | DEBUG | l-geram18 HTTP status: 200
+2025-12-29 15:08:52 | INFO | l-geram18 price fetched: 151191000
+2025-12-29 15:08:52 | INFO | Fetching l-sekee (attempt 1)
+2025-12-29 15:08:52 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:08:52 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:08:53 | DEBUG | l-sekee HTTP status: 200
+2025-12-29 15:08:53 | INFO | l-sekee price fetched: 1575050000
+2025-12-29 15:08:53 | DEBUG | Encrypting data
+2025-12-29 15:08:53 | DEBUG | Encryption complete
+2025-12-29 15:08:53 | INFO | CSV header written
+2025-12-29 15:08:53 | INFO | Row written to CSV
+2025-12-29 15:08:53 | INFO | Logged data successfully: 1393790,1390400,151191000,1575050000
+2025-12-29 15:09:18 | WARNING | Program stopped by user
+2025-12-29 15:09:20 | INFO | AES key and IV validated successfully
+2025-12-29 15:09:20 | INFO | TGJU price logger started
+2025-12-29 15:09:20 | INFO | Fetching l-crypto-tether-irr (attempt 1)
+2025-12-29 15:09:20 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:09:22 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:09:23 | DEBUG | l-crypto-tether-irr HTTP status: 200
+2025-12-29 15:09:23 | INFO | l-crypto-tether-irr price fetched: 1393790
+2025-12-29 15:09:23 | INFO | Fetching l-price_dollar_rl (attempt 1)
+2025-12-29 15:09:23 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:09:26 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:09:27 | DEBUG | l-price_dollar_rl HTTP status: 200
+2025-12-29 15:09:27 | INFO | l-price_dollar_rl price fetched: 1390400
+2025-12-29 15:09:27 | INFO | Fetching l-geram18 (attempt 1)
+2025-12-29 15:09:27 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:09:30 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:09:31 | DEBUG | l-geram18 HTTP status: 200
+2025-12-29 15:09:31 | INFO | l-geram18 price fetched: 151191000
+2025-12-29 15:09:31 | INFO | Fetching l-sekee (attempt 1)
+2025-12-29 15:09:31 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:09:39 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:09:39 | DEBUG | l-sekee HTTP status: 200
+2025-12-29 15:09:39 | INFO | l-sekee price fetched: 1575050000
+2025-12-29 15:09:39 | DEBUG | Encrypting data
+2025-12-29 15:09:39 | DEBUG | Encryption complete
+2025-12-29 15:09:39 | INFO | Row written to CSV
+2025-12-29 15:09:39 | INFO | Logged data successfully: 1393790,1390400,151191000,1575050000
+2025-12-29 15:09:42 | WARNING | Program stopped by user
+2025-12-29 15:09:54 | INFO | AES key and IV validated successfully
+2025-12-29 15:09:54 | WARNING | AES key/IV changed! Clearing Prices.csv to avoid decryption issues.
+2025-12-29 15:09:54 | INFO | Prices.csv removed.
+2025-12-29 15:09:54 | INFO | TGJU price logger started
+2025-12-29 15:09:54 | INFO | Fetching l-crypto-tether-irr (attempt 1)
+2025-12-29 15:09:54 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:09:58 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:09:59 | DEBUG | l-crypto-tether-irr HTTP status: 200
+2025-12-29 15:09:59 | INFO | l-crypto-tether-irr price fetched: 1393790
+2025-12-29 15:09:59 | INFO | Fetching l-price_dollar_rl (attempt 1)
+2025-12-29 15:09:59 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:10:02 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:10:02 | DEBUG | l-price_dollar_rl HTTP status: 200
+2025-12-29 15:10:02 | INFO | l-price_dollar_rl price fetched: 1390400
+2025-12-29 15:10:02 | INFO | Fetching l-geram18 (attempt 1)
+2025-12-29 15:10:02 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:10:04 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:10:05 | DEBUG | l-geram18 HTTP status: 200
+2025-12-29 15:10:06 | INFO | l-geram18 price fetched: 151191000
+2025-12-29 15:10:06 | INFO | Fetching l-sekee (attempt 1)
+2025-12-29 15:10:06 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:10:14 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:10:15 | DEBUG | l-sekee HTTP status: 200
+2025-12-29 15:10:15 | INFO | l-sekee price fetched: 1575050000
+2025-12-29 15:10:15 | DEBUG | Encrypting data
+2025-12-29 15:10:15 | DEBUG | Encryption complete
+2025-12-29 15:10:15 | INFO | CSV header written
+2025-12-29 15:10:15 | INFO | Row written to CSV
+2025-12-29 15:10:15 | INFO | Logged data successfully: 1393790,1390400,151191000,1575050000
+2025-12-29 15:10:24 | WARNING | Program stopped by user
+2025-12-29 15:11:57 | INFO | AES key and IV validated successfully
+2025-12-29 15:11:57 | INFO | TGJU price logger started
+2025-12-29 15:11:57 | INFO | Fetching l-crypto-tether-irr (attempt 1)
+2025-12-29 15:11:57 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:07 | WARNING | l-crypto-tether-irr attempt 1 failed: HTTPSConnectionPool(host='www.tgju.org', port=443): Read timed out. (read timeout=10)
+2025-12-29 15:12:12 | INFO | Fetching l-crypto-tether-irr (attempt 2)
+2025-12-29 15:12:12 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:15 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:16 | DEBUG | l-crypto-tether-irr HTTP status: 200
+2025-12-29 15:12:16 | INFO | l-crypto-tether-irr price fetched: 1393790
+2025-12-29 15:12:16 | INFO | Fetching l-price_dollar_rl (attempt 1)
+2025-12-29 15:12:16 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:23 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:24 | DEBUG | l-price_dollar_rl HTTP status: 200
+2025-12-29 15:12:24 | INFO | l-price_dollar_rl price fetched: 1390400
+2025-12-29 15:12:24 | INFO | Fetching l-geram18 (attempt 1)
+2025-12-29 15:12:24 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:34 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:34 | DEBUG | l-geram18 HTTP status: 200
+2025-12-29 15:12:34 | INFO | l-geram18 price fetched: 151191000
+2025-12-29 15:12:34 | INFO | Fetching l-sekee (attempt 1)
+2025-12-29 15:12:34 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:36 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:36 | DEBUG | l-sekee HTTP status: 200
+2025-12-29 15:12:36 | INFO | l-sekee price fetched: 1575050000
+2025-12-29 15:12:36 | DEBUG | Encrypting data
+2025-12-29 15:12:36 | DEBUG | Encryption complete
+2025-12-29 15:12:36 | INFO | Row written to CSV
+2025-12-29 15:12:36 | INFO | Logged data successfully: 1393790,1390400,151191000,1575050000
+2025-12-29 15:12:40 | WARNING | Program stopped by user
+2025-12-29 15:12:45 | INFO | AES key and IV validated successfully
+2025-12-29 15:12:45 | WARNING | AES key/IV changed! Clearing Prices.csv to avoid decryption issues.
+2025-12-29 15:12:45 | INFO | Prices.csv removed.
+2025-12-29 15:12:45 | INFO | TGJU price logger started
+2025-12-29 15:12:45 | INFO | Fetching l-crypto-tether-irr (attempt 1)
+2025-12-29 15:12:45 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:48 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:49 | DEBUG | l-crypto-tether-irr HTTP status: 200
+2025-12-29 15:12:49 | INFO | l-crypto-tether-irr price fetched: 1393790
+2025-12-29 15:12:49 | INFO | Fetching l-price_dollar_rl (attempt 1)
+2025-12-29 15:12:49 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:50 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:51 | DEBUG | l-price_dollar_rl HTTP status: 200
+2025-12-29 15:12:52 | INFO | l-price_dollar_rl price fetched: 1390400
+2025-12-29 15:12:52 | INFO | Fetching l-geram18 (attempt 1)
+2025-12-29 15:12:52 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:52 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:53 | DEBUG | l-geram18 HTTP status: 200
+2025-12-29 15:12:53 | INFO | l-geram18 price fetched: 151191000
+2025-12-29 15:12:53 | INFO | Fetching l-sekee (attempt 1)
+2025-12-29 15:12:53 | DEBUG | Starting new HTTPS connection (1): www.tgju.org:443
+2025-12-29 15:12:55 | DEBUG | https://www.tgju.org:443 "GET / HTTP/1.1" 200 None
+2025-12-29 15:12:55 | DEBUG | l-sekee HTTP status: 200
+2025-12-29 15:12:56 | INFO | l-sekee price fetched: 1575050000
+2025-12-29 15:12:56 | DEBUG | Encrypting data
+2025-12-29 15:12:56 | DEBUG | Encryption complete
+2025-12-29 15:12:56 | INFO | Row written to CSV
+2025-12-29 15:12:56 | INFO | Logged data successfully: 1393790,1390400,151191000,1575050000
+2025-12-29 15:13:02 | WARNING | Program stopped by user
