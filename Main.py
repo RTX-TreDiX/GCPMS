@@ -85,12 +85,12 @@ class Card(QFrame):
 
 class AnimatedChart(QChartView):
     chartChanged = Signal(str)
+    
 
     def __init__(self):
         super().__init__()
 
         self.setRenderHint(QPainter.Antialiasing)
-        self.setFocusPolicy(Qt.NoFocus)
 
         self.setMouseTracking(True)
 
@@ -111,7 +111,6 @@ class AnimatedChart(QChartView):
 
         self.chart = QChart()
         self.chart.legend().hide()
-        self.chart.setBackgroundVisible(False)
         self.setChart(self.chart)
 
         self._set_data("Gold")
@@ -132,7 +131,7 @@ class AnimatedChart(QChartView):
 
         points = QScatterSeries()
         points.setMarkerSize(10)
-        points.setColor(QColor(0, 0, 0, 0))      # کاملاً نامرئی
+        points.setColor(QColor(0, 0, 0, 0))     
         points.setBorderColor(QColor(0, 0, 0, 0))
 
         data = DATA[key]
@@ -360,21 +359,6 @@ class MainWindow(QMainWindow):
 
         return frame
 
-    #! ---------- Main Content ----------
-    def main_content(self):
-        layout = QVBoxLayout()
-        layout.setSpacing(20)
-
-        layout.addWidget(self.header())
-
-        body = QHBoxLayout()
-        body.setSpacing(20)
-
-        body.addWidget(self.stack, 3)
-        body.addWidget(self.right_panel(), 1)
-
-        layout.addLayout(body)
-        return layout
 
     #! ---------- Header ----------
     def header(self):
