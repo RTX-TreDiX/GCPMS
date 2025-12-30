@@ -1,9 +1,6 @@
 import sys
-import os, paramiko
-from Crypto.Cipher import AES
 import backend
-from Crypto.Util.Padding import pad, unpad
-import base64
+
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -30,7 +27,7 @@ from PySide6.QtCore import (
     QDateTime,
     QTimer, 
 )
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QDateTimeAxis ,QCategoryAxis , QScatterSeries
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QDateTimeAxis ,QCategoryAxis , QScatterSeries
 
 #! ---------- Data ----------
 key = "7acbe2c3a12c9fbf8a76cd1185dc874f8def2b8f0a81bf146ae39405a357ef79"

@@ -44,12 +44,12 @@ def try_decrypt(key, iv):
             if content != "":
                 reader = decrypt_aes(content, client_key, client_iv)
                 if reader:
-                    result = download_via_sftp(reader,key,iv)
+                    result = download_via_sftp(reader, key, iv)
             else:
-                result = (False , 1)
+                result = (False, 1)
     else:
-        result = (False , 1)
-                
+        result = (False, 1)
+
     return result
 
 
@@ -60,12 +60,14 @@ def load_data(DATA, key, iv):
             line = line.strip().split(",")
             if line[0] not in DATA["Time"]:
                 DATA["Time"].append(line[0])
-                decrypted_line = decrypt_aes(line[1], key, bytes.fromhex(iv)).split(",")  # ?time
+                decrypted_line = decrypt_aes(line[1], key, bytes.fromhex(iv)).split(
+                    ","
+                )  # ?time
+                # print(decrypted_line)
                 DATA["Gold"].append(int(decrypted_line[2]))  # ?gold
                 DATA["Coin"].append(int(decrypted_line[3]))  # ?coin
                 DATA["USD"].append(int(decrypted_line[1]))  # ?usd
                 DATA["USDT"].append(int(decrypted_line[0]))  # ?usdt
-
 
 
 def load_local_settings():
@@ -81,13 +83,16 @@ def load_local_settings():
     return settings
 
 
-def add_server_key_iv_tosettings(key,iv):
+def add_server_key_iv_tosettings(key, iv):
     settings = load_local_settings()
+    while len(settings) < 5:
+        settings.append("")
+    settings[3] = key
+    settings[4] = iv
     with open(find_app_path("settings.csv"), "w", newline="", encoding="utf-8") as f:
-        settings.append(key)
-        settings.append(iv)
-        f.write(encrypt_aes(",".join(settings), client_key , client_iv))
-        
+        f.write(encrypt_aes(",".join(settings), client_key, client_iv))
+
+
 def download_via_sftp(enter, key, iv):
     result = ""
     try:
@@ -98,18 +103,18 @@ def download_via_sftp(enter, key, iv):
         sftp.get("/home/debian/Prices.csv", find_app_path("Prices.csv"))
         sftp.close()
         transport.close()
-        result = (True , 1)
+        result = (True, 1)
     except Exception as e:
-        result = (False, 2)  
-    if result[0]: 
+        result = (False, 2)
+    if result[0]:
         try:
             with open(find_app_path("Prices.csv"), "r", encoding="utf-8") as f:
                 encrypted_data = f.readlines()
                 for line in encrypted_data:
                     line = line.strip().split(",")
                     decrypted_line = decrypt_aes(line[1], key, bytes.fromhex(iv))
-                    add_server_key_iv_tosettings(key,iv)
-                    result = (True , 1)
+                    add_server_key_iv_tosettings(key, iv)
+                    result = (True, 1)
                     break
         except Exception as e:
             result = (False, 3)
@@ -135,5 +140,3 @@ def ensure_data_files():
     if not os.path.exists(settings_path):
         with open(settings_path, "w", encoding="utf-8") as f:
             pass
-
-

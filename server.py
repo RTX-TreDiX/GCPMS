@@ -54,7 +54,6 @@ HEX_IV_RE = re.compile(r"^[0-9a-f]{32}$")  # 16 bytes
 def create_default_config(config_path):
     key_hex = secrets.token_bytes(32).hex()
     iv_hex = secrets.token_bytes(16).hex()
-
     data = {"key": key_hex, "iv": iv_hex}
 
     with open(config_path, "w", encoding="utf-8") as f:
@@ -71,6 +70,7 @@ def load_and_validate_aes(config_path):
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             cfg = json.load(f)
+            
 
         key_hex = cfg.get("key")
         iv_hex = cfg.get("iv")
